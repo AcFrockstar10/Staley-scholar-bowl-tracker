@@ -374,7 +374,7 @@
     <div id="tab-photoScan" class="tab-content">
         <div class="card">
             <h2>Vercel Serverless Scoresheet Processing</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. The app will send it along with your school roster to your Vercel backend to extract player stats.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. The app will send it to your Vercel backend and display extracted player stats.</p>
             
             <div class="photo-review-layout">
                 <div>
@@ -624,7 +624,7 @@
         buildScoreSheet(); 
     }
 
-    // Client-side image compression + sending schoolRoster to Vercel API backend
+    // Client-side compression + Vercel Serverless API call with debug parsing
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -635,7 +635,7 @@
             img.src = e.target.result;
             img.onload = async function() {
                 document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Scoresheet:</strong></p><img src="${img.src}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
-                document.getElementById('scanStatusBox').innerText = "Analyzing scoresheet with your school roster...";
+                document.getElementById('scanStatusBox').innerText = "Analyzing scoresheet via Vercel serverless function...";
 
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 1000;
@@ -654,20 +654,24 @@
                     const response = await fetch('/api/scan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ imageBase64: compressedBase64, roster: schoolRoster })
+                        body: JSON.stringify({ imageBase64: compressedBase64 })
                     });
 
                     const data = await response.json();
+                    console.log("API Response Data:", data);
+
                     if (data.success && data.data) {
                         let playerRows = '';
-                        data.data.playerStats.forEach(stat => {
-                            playerRows += `<tr><td>${stat.player}</td><td>${stat.qCorrect}</td><td>${stat.points} pts</td></tr>`;
+                        let statsArray = data.data.playerStats || data.data.players || [];
+                        
+                        statsArray.forEach(stat => {
+                            playerRows += `<tr><td>${stat.player || stat.name || 'Unknown'}</td><td>${stat.qCorrect ?? stat.correct ?? 0}</td><td>${stat.points ?? 0} pts</td></tr>`;
                         });
 
                         document.getElementById('scanStatusBox').innerHTML = `
                             <p style="color: #166534; font-weight: bold; margin-bottom: 8px;">✓ ${data.message}</p>
-                            <p style="margin-bottom: 6px;"><strong>Match:</strong> ${data.data.matchName}</p>
-                            <p style="margin-bottom: 10px;"><strong>Team Scores:</strong> Team 1 (${data.data.team1Score}) - Team 2 (${data.data.team2Score})</p>
+                            <p style="margin-bottom: 6px;"><strong>Match:</strong> ${data.data.matchName || 'Match'}</p>
+                            <p style="margin-bottom: 10px;"><strong>Team Scores:</strong> Team 1 (${data.data.team1Score || 0}) - Team 2 (${data.data.team2Score || 0})</p>
                             <p style="font-weight: bold; margin-bottom: 4px;">Matched Roster & Stats:</p>
                             <table class="response-table">
                                 <thead>
@@ -678,7 +682,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${playerRows}
+                                    ${playerRows.length > 0 ? playerRows : '<tr><td colspan="3" style="text-align:center;">No player stats found in response</td></tr>'}
                                 </tbody>
                             </table>
                         `;
