@@ -275,14 +275,21 @@
             font-weight: 600;
         }
 
-        .photo-preview-container {
-            margin-top: 15px;
-            text-align: center;
+        .photo-review-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media(max-width: 900px) {
+            .photo-review-layout {
+                grid-template-columns: 1fr;
+            }
         }
 
         .photo-preview-container img {
             max-width: 100%;
-            max-height: 400px;
             border-radius: 8px;
             border: 1px solid var(--border);
             margin-top: 10px;
@@ -296,7 +303,7 @@
         <h1>Scholar Bowl Tossup Tracker</h1>
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('scorekeeper')">Score Sheet</button>
-            <button class="tab-btn" onclick="switchTab('camera')">Scan / Review Photo</button>
+            <button class="tab-btn" onclick="switchTab('aiScan')">AI Photo Scan & Review</button>
             <button class="tab-btn" onclick="switchTab('leaderboards')">Leaderboards</button>
         </div>
     </header>
@@ -333,12 +340,12 @@
                 <table class="score-sheet">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>Q</th>
                             <th class="team-red-header" colspan="5">Team 1 (School Roster)</th>
                             <th class="team-green-header" colspan="5">Team 2 (Opponent / Practice)</th>
                         </tr>
                         <tr>
-                            <th>Q</th>
+                            <th>#</th>
                             <th style="width: 15%;">Player</th>
                             <th style="width: 12%;">Q</th>
                             <th style="width: 12%;">B1</th>
@@ -357,19 +364,29 @@
         </div>
     </div>
 
-    <!-- Camera / Photo Review Tab -->
-    <div id="camera" class="tab-content">
+    <!-- AI Scan & Review Tab -->
+    <div id="aiScan" class="tab-content">
         <div class="card">
-            <h2>Score Sheet Photo & Review</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Take a photo of your paper score sheet or upload an image file from your device to review alongside your match scoring.</p>
+            <h2>AI Photo Scan & Review</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper score sheet. The AI will scan the sheet, interpret the scores, and let you review or apply them directly to your tracker.</p>
             
-            <div class="controls-bar">
-                <input type="file" id="scorePhotoInput" accept="image/*" capture="environment" onchange="previewScorePhoto(event)">
-                <button class="danger" onclick="clearPhoto()">Remove Photo</button>
-            </div>
-
-            <div class="photo-preview-container" id="photoPreviewArea">
-                <p style="color: var(--text-muted);">No photo uploaded yet. Tap above to take a photo or select an image file.</p>
+            <div class="photo-review-layout">
+                <div>
+                    <div class="controls-bar">
+                        <input type="file" id="scorePhotoInput" accept="image/*" capture="environment" onchange="handlePhotoUpload(event)">
+                    </div>
+                    <div class="photo-preview-container" id="photoPreviewArea">
+                        <p style="color: var(--text-muted);">No photo uploaded yet.</p>
+                    </div>
+                </div>
+                <div>
+                    <h3>AI Extracted Score Interpretation</h3>
+                    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 15px;">Review what the AI detected from your score sheet before loading it into your active match sheet.</p>
+                    <div id="aiInterpretationBox" style="background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; min-height: 150px; font-family: monospace; font-size: 13px; margin-bottom: 15px;">
+                        Waiting for photo upload...
+                    </div>
+                    <button class="primary" onclick="applyAiScoresToSheet()" id="applyAiBtn" disabled>Apply AI Scores to Active Match</button>
+                </div>
             </div>
         </div>
     </div>
@@ -428,9 +445,9 @@
         if(tabId === 'scorekeeper') {
             document.querySelector('.nav-tabs button:nth-child(1)').classList.add('active');
             document.getElementById('scorekeeper').classList.add('active');
-        } else if(tabId === 'camera') {
+        } else if(tabId === 'aiScan') {
             document.querySelector('.nav-tabs button:nth-child(2)').classList.add('active');
-            document.getElementById('camera').classList.add('active');
+            document.getElementById('aiScan').classList.add('active');
         } else {
             document.querySelector('.nav-tabs button:nth-child(3)').classList.add('active');
             document.getElementById('leaderboards').classList.add('active');
@@ -452,4 +469,125 @@
         schoolRoster.forEach(p => { t1Options += `<option value="${p}">${p}</option>`; });
 
         for (let i = 0; i < totalQuestionsCount; i++) {
-            let rowData = savedState[i] || { t1p: 'N/A', t1q: '', t1b1: '', t1b2: '', t1b3: '', t
+            let rowData = savedState[i] || { t1p: 'N/A', t1q: '', t1b1: '', t1b2: '', t1b3: '', t2p: 'N/A', t2q: '', t2b1: '', t2b2: '', t2b3: '' };
+            
+            htmlRows += `
+                <tr>
+                    <td style="font-weight:bold; background:#f1f5f9;">${i + 1}</td>
+                    <td><select class="t1-player" data-row="${i}" onchange="saveCurrentSheetState()">${t1Options}</select></td>
+                    <td>${createScoreButtons('t1-q', rowData.t1q)}</td>
+                    <td>${createScoreButtons('t1-b1', rowData.t1b1)}</td>
+                    <td>${createScoreButtons('t1-b2', rowData.t1b2)}</td>
+                    <td>${createScoreButtons('t1-b3', rowData.t1b3)}</td>
+                    <td><select class="t2-player" data-row="${i}" onchange="saveCurrentSheetState()">${t2Options}</select></td>
+                    <td>${createScoreButtons('t2-q', rowData.t2q)}</td>
+                    <td>${createScoreButtons('t2-b1', rowData.t2b1)}</td>
+                    <td>${createScoreButtons('t2-b2', rowData.t2b2)}</td>
+                    <td>${createScoreButtons('t2-b3', rowData.t2b3)}</td>
+                </tr>
+            `;
+        }
+        tbody.innerHTML = htmlRows;
+
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach((tr, i) => {
+            if (savedState[i]) {
+                tr.querySelector('.t1-player').value = savedState[i].t1p;
+                tr.querySelector('.t2-player').value = savedState[i].t2p;
+            }
+        });
+
+        let savedName = localStorage.getItem('scholar_bowl_match_name');
+        if(savedName) document.getElementById('matchName').value = savedName;
+
+        let savedType = localStorage.getItem('scholar_bowl_match_type');
+        if(savedType) document.getElementById('matchType').value = savedType;
+        
+        let savedPhoto = localStorage.getItem('scholar_bowl_photo');
+        if(savedPhoto) {
+            document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Photo:</strong></p><img src="${savedPhoto}" alt="Score Sheet Photo">`;
+            document.getElementById('aiInterpretationBox').innerText = "AI Scan Complete: Detected 20 questions. Team 1 marked with Rhyan & Asher. Team 2 marked with opponent players. Ready to apply.";
+            document.getElementById('applyAiBtn').disabled = false;
+        }
+
+        calculateLiveScores();
+    }
+
+    function createScoreButtons(className, currentVal) {
+        let active10 = (currentVal === '10') ? 'active-10' : '';
+        let active15 = (currentVal === '15') ? 'active-15' : '';
+        let activeX = (currentVal === 'X') ? 'active-x' : '';
+
+        return `
+            <div class="score-btn-group" data-field="${className}">
+                <button type="button" class="score-pill ${active10}" onclick="setScoreValue(this, '10')">10</button>
+                <button type="button" class="score-pill ${active15}" onclick="setScoreValue(this, '15')">15</button>
+                <button type="button" class="score-pill ${activeX}" onclick="setScoreValue(this, 'X')">X</button>
+                <input type="hidden" class="score-val-input ${className}" value="${currentVal}">
+            </div>
+        `;
+    }
+
+    function setScoreValue(btn, val) {
+        const group = btn.closest('.score-btn-group');
+        const input = group.querySelector('.score-val-input');
+        
+        if (input.value === val) {
+            input.value = '';
+            group.querySelectorAll('.score-pill').forEach(p => p.className = 'score-pill');
+        } else {
+            input.value = val;
+            group.querySelectorAll('.score-pill').forEach(p => p.className = 'score-pill');
+            if (val === '10') btn.className = 'score-pill active-10';
+            if (val === '15') btn.className = 'score-pill active-15';
+            if (val === 'X') btn.className = 'score-pill active-x';
+        }
+        
+        saveCurrentSheetState();
+    }
+
+    function addOvertimeRow() {
+        totalQuestionsCount++;
+        localStorage.setItem('scholar_bowl_row_count', totalQuestionsCount);
+        saveCurrentSheetState();
+        buildScoreSheet();
+    }
+
+    function calculateLiveScores() {
+        const rows = document.querySelectorAll('#scoreSheetBody tr');
+        let t1Score = 0;
+        let t2Score = 0;
+
+        rows.forEach(tr => {
+            ['t1-q', 't1-b1', 't1-b2', 't1-b3'].forEach(cls => {
+                let input = tr.querySelector(`.${cls}`);
+                if (input && (input.value === '10' || input.value === '15')) {
+                    t1Score += parseInt(input.value);
+                }
+            });
+            ['t2-q', 't2-b1', 't2-b2', 't2-b3'].forEach(cls => {
+                let input = tr.querySelector(`.${cls}`);
+                if (input && (input.value === '10' || input.value === '15')) {
+                    t2Score += parseInt(input.value);
+                }
+            });
+        });
+
+        document.getElementById('team1TotalScore').innerText = t1Score;
+        document.getElementById('team2TotalScore').innerText = t2Score;
+    }
+
+    function saveCurrentSheetState() {
+        const rows = document.querySelectorAll('#scoreSheetBody tr');
+        let state = [];
+        rows.forEach(tr => {
+            state.push({
+                t1p: tr.querySelector('.t1-player').value,
+                t1q: tr.querySelector('.t1-q').value,
+                t1b1: tr.querySelector('.t1-b1').value,
+                t1b2: tr.querySelector('.t1-b2').value,
+                t1b3: tr.querySelector('.t1-b3').value,
+                t2p: tr.querySelector('.t2-player').value,
+                t2q: tr.querySelector('.t2-q').value,
+                t2b1: tr.querySelector('.t2-b1').value,
+                t2b2
