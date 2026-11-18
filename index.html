@@ -390,6 +390,18 @@
             vertical-align: middle;
         }
 
+        .milestone-badge {
+            background: var(--primary);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 12px;
+            margin-left: 6px;
+            vertical-align: middle;
+            box-shadow: 0 2px 4px rgba(4, 120, 87, 0.3);
+        }
+
         .photo-review-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -566,7 +578,7 @@
     <div id="tab-leaderboards" class="tab-content">
         <div class="card">
             <h2>Player Leaderboards & Analytics</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Review cumulative player performance, win-loss records, accuracy conversion rates, and point analytics.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Review cumulative player performance, win-loss records, milestone badges, accuracy conversion rates, and point analytics.</p>
             
             <div class="leaderboard-grid">
                 <div>
@@ -641,6 +653,17 @@
 
     let totalQuestionsCount = 20;
     let lastScannedMatchData = null;
+
+    // Helper function to calculate milestone badge based on total correct tossups
+    function getMilestoneBadge(qCount) {
+        const milestones = [300, 250, 200, 150, 100, 75, 50, 25];
+        for (let m of milestones) {
+            if (qCount >= m) {
+                return `<span class="milestone-badge">🏆 ${m} Q</span>`;
+            }
+        }
+        return '';
+    }
 
     function playClickSound() {
         try {
@@ -1203,19 +1226,20 @@
         let realArr = Object.keys(realStats).map(p => ({ player: p, ...realStats[p] })).sort((a, b) => b.points - a.points);
         realArr.forEach((item, index) => {
             let mvpTag = (index === 0 && item.points > 0) ? '<span class="mvp-badge">MVP</span>' : '';
+            let milestoneTag = getMilestoneBadge(item.q);
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player} ${mvpTag}</td><td>${item.q}</td><td>${item.points}</td>`;
+            tr.innerHTML = `<td>${index + 1}</td><td>${item.player} ${mvpTag} ${milestoneTag}</td><td>${item.q}</td><td>${item.points}</td>`;
             realTableBody.appendChild(tr);
         });
 
         let practiceArr = Object.keys(practiceStats).map(p => ({ player: p, ...practiceStats[p] })).sort((a, b) => b.points - a.points);
         practiceArr.forEach((item, index) => {
+            let milestoneTag = getMilestoneBadge(item.q);
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
+            tr.innerHTML = `<td>${index + 1}</td><td>${item.player} ${milestoneTag}</td><td>${item.q}</td><td>${item.points}</td>`;
             practiceTableBody.appendChild(tr);
         });
 
-        // Find max points for relative stat bar scaling
         let maxPts = 1;
         schoolRoster.forEach(p => {
             let pts = analyticsStats[p]?.points || 0;
@@ -1234,10 +1258,11 @@
             let wins = winsMap[p] || 0;
             let losses = lossesMap[p] || 0;
             let barWidth = Math.min(100, Math.round((stats.points / maxPts) * 100));
+            let milestoneTag = getMilestoneBadge(totalQ);
 
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${p}</strong></td>
+                <td><strong>${p}</strong> ${milestoneTag}</td>
                 <td><span style="color: var(--accent); font-weight: bold;">${wins}-${losses}</span></td>
                 <td>${totalQ}</td>
                 <td>${accuracy}%</td>
