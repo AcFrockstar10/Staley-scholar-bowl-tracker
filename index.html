@@ -374,7 +374,7 @@
     <div id="tab-photoScan" class="tab-content">
         <div class="card">
             <h2>Vercel Serverless Scoresheet Processing</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. The app will compress it, send it to your Vercel backend function (`/api/scan`), and extract player stats.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. The app will send it along with your school roster to your Vercel backend to extract player stats.</p>
             
             <div class="photo-review-layout">
                 <div>
@@ -384,7 +384,7 @@
                     </div>
                 </div>
                 <div>
-                    <h3>Extracted Match & Player Stats</h3>
+                    <h3>Extracted Roster & Player Stats</h3>
                     <div id="scanStatusBox" style="background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; min-height: 200px; font-size: 14px; color: var(--text-muted);">
                         Waiting for photo upload...
                     </div>
@@ -438,7 +438,6 @@
         if (tabName === 'leaderboards') renderLeaderboards();
     }
 
-    // Fixed initialization event listener to ensure table builds correctly on load
     window.addEventListener('DOMContentLoaded', () => {
         buildScoreSheet();
     });
@@ -625,7 +624,7 @@
         buildScoreSheet(); 
     }
 
-    // Client-side image compression + Vercel Serverless API call parsing player stats
+    // Client-side image compression + sending schoolRoster to Vercel API backend
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -636,7 +635,7 @@
             img.src = e.target.result;
             img.onload = async function() {
                 document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Scoresheet:</strong></p><img src="${img.src}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
-                document.getElementById('scanStatusBox').innerText = "Analyzing scoresheet via Vercel serverless backend...";
+                document.getElementById('scanStatusBox').innerText = "Analyzing scoresheet with your school roster...";
 
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 1000;
@@ -655,7 +654,7 @@
                     const response = await fetch('/api/scan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ imageBase64: compressedBase64 })
+                        body: JSON.stringify({ imageBase64: compressedBase64, roster: schoolRoster })
                     });
 
                     const data = await response.json();
@@ -669,7 +668,7 @@
                             <p style="color: #166534; font-weight: bold; margin-bottom: 8px;">✓ ${data.message}</p>
                             <p style="margin-bottom: 6px;"><strong>Match:</strong> ${data.data.matchName}</p>
                             <p style="margin-bottom: 10px;"><strong>Team Scores:</strong> Team 1 (${data.data.team1Score}) - Team 2 (${data.data.team2Score})</p>
-                            <p style="font-weight: bold; margin-bottom: 4px;">Extracted Player Stats:</p>
+                            <p style="font-weight: bold; margin-bottom: 4px;">Matched Roster & Stats:</p>
                             <table class="response-table">
                                 <thead>
                                     <tr>
