@@ -24,7 +24,6 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Roboflow API key not configured on Vercel' });
         }
 
-        // Updated endpoint with your workspace and workflow ID
         const response = await fetch(`https://detect.roboflow.com/acfrockstar10-s-workspace-yqkrs/new-workflow`, {
             method: 'POST',
             headers: {
@@ -60,10 +59,18 @@ export default async function handler(req, res) {
             console.error("JSON parsing error:", e);
         }
 
+        // Safety check to ensure playerStats always maps correctly to frontend table
+        const normalizedStats = Array.isArray(parsedData.playerStats) ? parsedData.playerStats : (parsedData.players || []);
+
         return res.status(200).json({ 
             success: true, 
             message: 'Scoresheet successfully parsed via Roboflow workflow!',
-            data: parsedData
+            data: {
+                matchName: parsedData.matchName || "Scanned Match",
+                team1Score: parsedData.team1Score || 0,
+                team2Score: parsedData.team2Score || 0,
+                playerStats: normalizedStats
+            }
         });
 
     } catch (error) {
