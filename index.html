@@ -482,7 +482,7 @@
     <div id="tab-leaderboards" class="tab-content">
         <div class="card">
             <h2>Player Leaderboards & Analytics</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Review cumulative player performance, tossup conversion counts, and point analytics.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Review cumulative player performance, win-loss records, accuracy conversion rates, and point analytics.</p>
             
             <div class="leaderboard-grid">
                 <div>
@@ -518,7 +518,9 @@
                     <thead>
                         <tr>
                             <th>Player</th>
-                            <th>Total Tossups Correct</th>
+                            <th>W - L Record</th>
+                            <th>Tossups Correct</th>
+                            <th>Accuracy (%)</th>
                             <th>Total Points</th>
                             <th>Average Pts / Match</th>
                         </tr>
@@ -913,9 +915,15 @@
                             }
                         });
 
+                        // Determine win/loss for scanned match based on Team 1 vs Team 2 scores
+                        let t1Score = data.data.team1Score || 0;
+                        let t2Score = data.data.team2Score || 0;
+                        let matchOutcome = t1Score >= t2Score ? 'win' : 'loss';
+
                         lastScannedMatchData = {
                             name: data.data.matchName || "Scanned Match",
                             type: "real",
+                            outcome: matchOutcome,
                             records: verifiedStats
                         };
 
@@ -926,8 +934,8 @@
 
                         document.getElementById('scanStatusBox').innerHTML = `
                             <p style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">✓ ${data.message}</p>
-                            <p style="margin-bottom: 6px;"><strong>Match:</strong> ${data.data.matchName || 'Match'}</p>
-                            <p style="margin-bottom: 10px;"><strong>Team Scores:</strong> Team 1 (${data.data.team1Score || 0}) - Team 2 (${data.data.team2Score || 0})</p>
+                            <p style="margin-bottom: 6px;"><strong>Match:</strong> ${data.data.matchName || 'Match'} (${matchOutcome.toUpperCase()})</p>
+                            <p style="margin-bottom: 10px;"><strong>Team Scores:</strong> Team 1 (${t1Score}) - Team 2 (${t2Score})</p>
                             <p style="font-weight: bold; margin-bottom: 4px;">Verified Roster & Stats (≤ 2 letter variance):</p>
                             <table class="response-table">
                                 <thead>
@@ -996,13 +1004,22 @@
         const matchType = document.getElementById('matchType').value;
         const rows = document.querySelectorAll('#scoreSheetBody tr');
         let matchRecords = [];
+        let t1Total = 0;
+        let t2Total = 0;
 
         rows.forEach(tr => {
             const t1Player = tr.querySelector('.t1-player').value;
             const t1Q = tr.querySelector('.t1-q').value;
             if (t1Player !== 'N/A' && (t1Q === '10' || t1Q === '15')) {
                 matchRecords.push({ player: t1Player, qCorrect: 1, points: parseInt(t1Q) });
+                t1Total += parseInt(t1Q);
             }
+            // Add bonus points calc if present
+            ['t1-b1', 't1-b2', 't1-b3'].forEach(bCls => {
+                let bInput = tr.querySelector(`.${bCls}`);
+                if(bInput && bInput.value === '10') t1Total += 10;
+            });
+
             const t2Player = tr.querySelector('.t2-player').value;
             const t2Q = tr.querySelector('.t2-q').value;
             if (matchType === 'practice' && t2Player !== 'N/A' && (t2Q === '10' || t2Q === '15')) {
@@ -1010,14 +1027,16 @@
             }
         });
 
+        let matchOutcome = t1Total >= t2Total ? 'win' : 'loss';
+
         let savedMatches = [];
         try {
             savedMatches = JSON.parse(localStorage.getItem('scholar_bowl_matches') || '[]');
         } catch(e) { savedMatches = []; }
 
-        savedMatches.push({ name: matchName, type: matchType, records: matchRecords });
+        savedMatches.push({ name: matchName, type: matchType, outcome: matchOutcome, records: matchRecords });
         localStorage.setItem('scholar_bowl_matches', JSON.stringify(savedMatches));
-        alert(`Match "${matchName}" saved to leaderboard!`);
+        alert(`Match "${matchName}" saved to leaderboard! (${matchOutcome.toUpperCase()})`);
         localStorage.removeItem('scholar_bowl_current_sheet');
         totalQuestionsCount = 20;
         buildScoreSheet();
@@ -1045,6 +1064,8 @@
         let analyticsStats = {};
         let matchCounts = {};
         let analyticsMatchCounts = {};
+        let winsMap = {};
+        let lossesMap = {};
 
         schoolRoster.forEach(p => {
             realStats[p] = { q: 0, points: 0 };
@@ -1052,6 +1073,8 @@
             analyticsStats[p] = { q: 0, points: 0 };
             matchCounts[p] = 0;
             analyticsMatchCounts[p] = 0;
+            winsMap[p] = 0;
+            lossesMap[p] = 0;
         });
 
         savedMatches.forEach(m => {
@@ -1066,7 +1089,6 @@
                     practiceStats[r.player].points += r.points;
                 }
 
-                // Analytics filter logic
                 if (filterVal === 'all') {
                     if (analyticsStats[r.player]) {
                         analyticsStats[r.player].q += r.qCorrect;
@@ -1083,10 +1105,14 @@
             playersInMatch.forEach(p => {
                 if (m.type === 'real' && matchCounts[p] !== undefined) matchCounts[p]++;
                 
-                if (filterVal === 'all') {
+                // Track Wins and Losses per player
+                if (filterVal === 'all' || m.type === filterVal) {
                     if (analyticsMatchCounts[p] !== undefined) analyticsMatchCounts[p]++;
-                } else if (m.type === filterVal) {
-                    if (analyticsMatchCounts[p] !== undefined) analyticsMatchCounts[p]++;
+                    if (m.outcome === 'win') {
+                        if (winsMap[p] !== undefined) winsMap[p]++;
+                    } else {
+                        if (lossesMap[p] !== undefined) lossesMap[p]++;
+                    }
                 }
             });
         });
@@ -1105,14 +1131,29 @@
             practiceTableBody.appendChild(tr);
         });
 
-        // Render Analytics Breakdown based on selected dropdown filter
+        // Render Analytics Breakdown with W-L and Accuracy (%)
         schoolRoster.forEach(p => {
             let stats = analyticsStats[p] || { q: 0, points: 0 };
             let matches = analyticsMatchCounts[p] || 1;
             let avgPts = (stats.points / matches).toFixed(1);
+            let totalQ = stats.q;
+            
+            // Assuming approx 20 tossups per match total for conversion accuracy percentage calculation
+            let totalQuestionsHeard = matches * 20; 
+            let accuracy = totalQuestionsHeard > 0 ? ((totalQ / totalQuestionsHeard) * 100).toFixed(1) : '0.0';
+
+            let wins = winsMap[p] || 0;
+            let losses = lossesMap[p] || 0;
 
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${p}</td><td>${stats.q}</td><td>${stats.points}</td><td>${avgPts} pts</td>`;
+            tr.innerHTML = `
+                <td>${p}</td>
+                <td><strong>${wins}-${losses}</strong></td>
+                <td>${totalQ}</td>
+                <td>${accuracy}%</td>
+                <td>${stats.points} pts</td>
+                <td>${avgPts} pts</td>
+            `;
             analyticsTableBody.appendChild(tr);
         });
     }
