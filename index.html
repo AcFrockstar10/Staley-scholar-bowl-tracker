@@ -599,7 +599,7 @@
         buildScoreSheet(); 
     }
 
-    // Client-side image compression + Vercel Serverless API call
+    // Client-side image compression + Vercel Serverless API call with rich feedback
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -609,11 +609,9 @@
             const img = new Image();
             img.src = e.target.result;
             img.onload = async function() {
-                // Display local preview
                 document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Scoresheet:</strong></p><img src="${img.src}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
                 document.getElementById('scanStatusBox').innerText = "Compressing image and uploading to Vercel serverless function...";
 
-                // Canvas compression to stay under Vercel's 4.5MB limit
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 1000;
                 let scaleSize = MAX_WIDTH / img.width;
@@ -636,7 +634,14 @@
 
                     const data = await response.json();
                     if (data.success) {
-                        document.getElementById('scanStatusBox').innerHTML = `<span style="color: #166534; font-weight: bold;">✓ ${data.message}</span>`;
+                        document.getElementById('scanStatusBox').innerHTML = `
+                            <p style="color: #166534; font-weight: bold; margin-bottom: 8px;">✓ ${data.message}</p>
+                            <ul style="list-style-type: none; padding-left: 0; font-size: 13px; color: #333;">
+                                <li><strong>File Size:</strong> ${data.details.fileSize}</li>
+                                <li><strong>Processed At:</strong> ${data.details.processedAt}</li>
+                                <li><strong>Status:</strong> ${data.details.serverStatus}</li>
+                            </ul>
+                        `;
                     } else {
                         document.getElementById('scanStatusBox').innerText = "Error: " + (data.error || "Unknown error");
                     }
