@@ -374,7 +374,7 @@
     <div id="tab-photoScan" class="tab-content">
         <div class="card">
             <h2>Vercel Serverless Scoresheet Processing</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. The app will send it to your Vercel backend and display extracted player stats.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. Extracted stats are verified against your school roster and can be saved to leaderboards.</p>
             
             <div class="photo-review-layout">
                 <div>
@@ -418,10 +418,11 @@
 </div>
 
 <script>
-    const schoolRoster = ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic"];
+    const schoolRoster = ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic", "Siddharth", "Ryan", "Stewart", "Prithvi", "Chaitanya"];
     const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
 
     let totalQuestionsCount = 20;
+    let lastScannedMatchData = null; // Stores verified scan results for quick saving
 
     function switchTab(tabName) {
         ['scorekeeper', 'photoScan', 'leaderboards'].forEach(t => {
@@ -624,7 +625,40 @@
         buildScoreSheet(); 
     }
 
-    // Client-side compression + Vercel Serverless API call with debug parsing
+    // --- Levenshtein Distance Safety Check (<= 2 letter difference) ---
+    function getEditDistance(a, b) {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
+        for (let j = 0; j <= a.length; j++) { matrix[0][j] = [j]; }
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+
+    function matchPlayerToRoster(scannedName) {
+        if (!scannedName) return null;
+        let bestMatch = null;
+        let minDistance = 3; // Allowed threshold: <= 2 letter changes
+        schoolRoster.forEach(rosterName => {
+            let dist = getEditDistance(scannedName.toLowerCase(), rosterName.toLowerCase());
+            if (dist < minDistance) {
+                minDistance = dist;
+                bestMatch = rosterName;
+            }
+        });
+        return bestMatch; // Returns null if name differs by > 2 letters
+    }
+
+    // Client-side compression + Vercel Serverless API call with verification
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -658,21 +692,43 @@
                     });
 
                     const data = await response.json();
-                    console.log("API Response Data:", data);
 
                     if (data.success && data.data) {
-                        let playerRows = '';
-                        let statsArray = data.data.playerStats || data.data.players || [];
+                        let verifiedStats = [];
+                        let rawStats = data.data.playerStats || data.data.players || [];
                         
-                        statsArray.forEach(stat => {
-                            playerRows += `<tr><td>${stat.player || stat.name || 'Unknown'}</td><td>${stat.qCorrect ?? stat.correct ?? 0}</td><td>${stat.points ?? 0} pts</td></tr>`;
+                        rawStats.forEach(stat => {
+                            let rawName = stat.player || stat.name || '';
+                            let verifiedName = matchPlayerToRoster(rawName);
+
+                            if (verifiedName) {
+                                verifiedStats.push({
+                                    player: verifiedName,
+                                    qCorrect: stat.qCorrect ?? stat.correct ?? 0,
+                                    points: stat.points ?? 0
+                                });
+                            } else {
+                                console.warn(`Filtered out "${rawName}" (differs by > 2 letters from roster).`);
+                            }
+                        });
+
+                        // Store verified match for quick saving to leaderboard
+                        lastScannedMatchData = {
+                            name: data.data.matchName || "Scanned Match",
+                            type: "real",
+                            records: verifiedStats
+                        };
+
+                        let playerRows = '';
+                        verifiedStats.forEach(stat => {
+                            playerRows += `<tr><td>${stat.player}</td><td>${stat.qCorrect}</td><td>${stat.points} pts</td></tr>`;
                         });
 
                         document.getElementById('scanStatusBox').innerHTML = `
                             <p style="color: #166534; font-weight: bold; margin-bottom: 8px;">✓ ${data.message}</p>
                             <p style="margin-bottom: 6px;"><strong>Match:</strong> ${data.data.matchName || 'Match'}</p>
                             <p style="margin-bottom: 10px;"><strong>Team Scores:</strong> Team 1 (${data.data.team1Score || 0}) - Team 2 (${data.data.team2Score || 0})</p>
-                            <p style="font-weight: bold; margin-bottom: 4px;">Matched Roster & Stats:</p>
+                            <p style="font-weight: bold; margin-bottom: 4px;">Verified Roster & Stats (≤ 2 letter variance):</p>
                             <table class="response-table">
                                 <thead>
                                     <tr>
@@ -682,9 +738,10 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${playerRows.length > 0 ? playerRows : '<tr><td colspan="3" style="text-align:center;">No player stats found in response</td></tr>'}
+                                    ${playerRows.length > 0 ? playerRows : '<tr><td colspan="3" style="text-align:center;">No matching roster players found within threshold</td></tr>'}
                                 </tbody>
                             </table>
+                            <button class="primary" style="margin-top: 15px; width: 100%;" onclick="saveScannedMatchToLeaderboard()">Save Scanned Match to Leaderboard</button>
                         `;
                     } else {
                         document.getElementById('scanStatusBox').innerText = "Error: " + (data.error || "Unknown error");
@@ -695,6 +752,22 @@
             };
         };
         reader.readAsDataURL(file);
+    }
+
+    function saveScannedMatchToLeaderboard() {
+        if (!lastScannedMatchData || lastScannedMatchData.records.length === 0) {
+            alert("No verified player records to save.");
+            return;
+        }
+
+        let savedMatches = [];
+        try {
+            savedMatches = JSON.parse(localStorage.getItem('scholar_bowl_matches') || '[]');
+        } catch(e) { savedMatches = []; }
+
+        savedMatches.push(lastScannedMatchData);
+        localStorage.setItem('scholar_bowl_matches', JSON.stringify(savedMatches));
+        alert(`Successfully saved "${lastScannedMatchData.name}" to the leaderboard!`);
     }
 
     function clearAllData() {
