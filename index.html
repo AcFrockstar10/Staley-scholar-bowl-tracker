@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scholar Bowl Tossup Tracker</title>
+    <!-- Load Tesseract.js from CDN for free browser-based text recognition -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --primary: #4c5c92;
@@ -258,6 +260,19 @@
             font-weight: 600;
         }
 
+        .photo-review-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media(max-width: 900px) {
+            .photo-review-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .photo-preview-container img {
             max-width: 100%;
             border-radius: 8px;
@@ -300,7 +315,7 @@
                 </div>
             </div>
 
-            <!-- Live Match Score Banner (Cannot go below 0) -->
+            <!-- Live Match Score Banner (Cannot drop below 0) -->
             <div class="live-score-banner">
                 <div>Team 1 Score: <span id="team1TotalScore">0</span></div>
                 <div>Team 2 Score: <span id="team2TotalScore">0</span></div>
@@ -337,11 +352,22 @@
     <!-- AI Scan Tab -->
     <div id="tab-aiScan" class="tab-content">
         <div class="card">
-            <h2>AI Photo Scan & NAQT Sheet Review</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your filled NAQT paper scoresheet. The system will review your notes and verify scoring layout.</p>
-            <input type="file" id="scorePhotoInput" accept="image/*" capture="environment" onchange="handlePhotoUpload(event)">
-            <div class="photo-preview-container" id="photoPreviewArea" style="margin-top:15px;">
-                <p style="color: var(--text-muted);">No photo uploaded yet.</p>
+            <h2>Free In-Browser Photo Scan & OCR</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Take a photo or upload an image of your paper NAQT scoresheet. The browser will extract text and numbers locally without needing any API key!</p>
+            
+            <div class="photo-review-layout">
+                <div>
+                    <input type="file" id="scorePhotoInput" accept="image/*" capture="environment" onchange="handlePhotoScan(event)">
+                    <div class="photo-preview-container" id="photoPreviewArea" style="margin-top:15px;">
+                        <p style="color: var(--text-muted);">No photo uploaded yet.</p>
+                    </div>
+                </div>
+                <div>
+                    <h3>Extracted OCR Text Data</h3>
+                    <div id="ocrResultBox" style="background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; min-height: 200px; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all;">
+                        Upload an image to scan text...
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -470,7 +496,6 @@
                 </div>
             `;
         } else {
-            // Bonuses only get 10 and X (-5 and 15 removed)
             return `
                 <div class="score-btn-group">
                     <button type="button" class="score-pill ${active10}" onclick="setScoreValue(this, '10', '${className}')">10</button>
@@ -575,12 +600,22 @@
         buildScoreSheet(); 
     }
 
-    function handlePhotoUpload(event) {
+    // Free in-browser OCR scanning using Tesseract.js
+    async function handlePhotoScan(event) {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Scoresheet Photo:</strong></p><img src="${e.target.result}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
+            reader.onload = async function(e) {
+                const imageUrl = e.target.result;
+                document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Scoresheet:</strong></p><img src="${imageUrl}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
+                document.getElementById('ocrResultBox').innerText = "Scanning image with browser OCR (please wait)...";
+
+                try {
+                    const result = await Tesseract.recognize(imageUrl, 'eng');
+                    document.getElementById('ocrResultBox').innerText = "--- OCR SCAN RESULTS ---\n\n" + result.data.text;
+                } catch (err) {
+                    document.getElementById('ocrResultBox').innerText = "Error scanning image: " + err.message;
+                }
             };
             reader.readAsDataURL(file);
         }
