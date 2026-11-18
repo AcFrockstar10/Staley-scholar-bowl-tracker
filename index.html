@@ -131,6 +131,36 @@
             box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3);
         }
 
+        .flashcard-link-btn {
+            padding: 10px 18px;
+            border: 1px solid var(--primary);
+            background: rgba(4, 120, 87, 0.1);
+            color: var(--primary);
+            font-weight: 700;
+            border-radius: 10px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .flashcard-link-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        [data-theme="dark"] .flashcard-link-btn {
+            background: rgba(5, 150, 105, 0.15);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        [data-theme="dark"] .flashcard-link-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
         .dark-mode-toggle {
             background: var(--card-bg);
             color: var(--text-main);
@@ -171,7 +201,7 @@
         .controls-bar {
             display: flex;
             gap: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
@@ -182,6 +212,34 @@
             gap: 12px;
             flex-wrap: wrap;
             align-items: center;
+        }
+
+        /* Lineup & Swaps Collapsible Section */
+        .lineup-panel {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+        }
+
+        .lineup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 12px;
+        }
+
+        .lineup-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .lineup-item label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
         }
 
         select, input, button {
@@ -386,7 +444,7 @@
             font-weight: bold;
             padding: 2px 6px;
             border-radius: 4px;
-            margin-left: 6px;
+            margin-left: 4px;
             vertical-align: middle;
         }
 
@@ -397,9 +455,21 @@
             font-weight: 700;
             padding: 2px 7px;
             border-radius: 12px;
-            margin-left: 6px;
+            margin-left: 4px;
             vertical-align: middle;
             box-shadow: 0 2px 4px rgba(4, 120, 87, 0.3);
+        }
+
+        .achievement-badge {
+            background: #3b82f6;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 12px;
+            margin-left: 4px;
+            vertical-align: middle;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
 
         .photo-review-layout {
@@ -485,6 +555,7 @@
             <h1>Scholar Bowl Tossup Tracker</h1>
         </div>
         <div class="header-actions">
+            <a href="https://www.naqt.com/order/" target="_blank" class="flashcard-link-btn">🧠 NAQT Practice & Orders</a>
             <button class="dark-mode-toggle" id="darkModeBtn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
             <div class="nav-tabs">
                 <button class="tab-btn active" id="btn-scorekeeper" onclick="switchTab('scorekeeper')">Score Sheet</button>
@@ -514,6 +585,20 @@
                     <button class="success" onclick="addOvertimeRow()">+ Overtime Q</button>
                     <button class="primary" onclick="saveMatchData()">Save Match</button>
                     <button class="danger" onclick="clearAllData()">Reset All</button>
+                </div>
+            </div>
+
+            <!-- Active Match Lineup & Swaps Panel -->
+            <div class="lineup-panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <h3>Match Starting Lineup & Substitutions (Swaps)</h3>
+                    <button class="primary" style="padding: 6px 12px; font-size: 12px;" onclick="addSwapRow()">+ Add Substitution</button>
+                </div>
+                <div class="lineup-grid" id="startingLineupGrid">
+                    <!-- Starting 4 Players -->
+                </div>
+                <div id="swapsContainer" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamic swaps -->
                 </div>
             </div>
 
@@ -578,13 +663,13 @@
     <div id="tab-leaderboards" class="tab-content">
         <div class="card">
             <h2>Player Leaderboards & Analytics</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Review cumulative player performance, win-loss records, milestone badges, accuracy conversion rates, and point analytics.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Review cumulative player performance, match attendance counts, win-loss records, milestone & achievement badges, and accuracy conversion rates.</p>
             
             <div class="leaderboard-grid">
                 <div>
-                    <h3>Real Matches</h3>
+                    <h3>Real Matches (Attended / Points)</h3>
                     <table class="lb-table" id="realLbTable">
-                        <thead><tr><th>Rank</th><th>Player</th><th>Q</th><th>Points</th></tr></thead>
+                        <thead><tr><th>Rank</th><th>Player</th><th>Matches</th><th>Q</th><th>Points</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -616,6 +701,7 @@
                             <tr>
                                 <th>Player</th>
                                 <th>W - L Record</th>
+                                <th>Matches</th>
                                 <th>Tossups Correct</th>
                                 <th>Accuracy (%)</th>
                                 <th>Total Points</th>
@@ -654,15 +740,31 @@
     let totalQuestionsCount = 20;
     let lastScannedMatchData = null;
 
-    // Helper function to calculate milestone badge based on total correct tossups
     function getMilestoneBadge(qCount) {
         const milestones = [300, 250, 200, 150, 100, 75, 50, 25];
         for (let m of milestones) {
             if (qCount >= m) {
-                return `<span class="milestone-badge">🏆 ${m} Q</span>`;
+                return `<span class="milestone-badge">🏆 ${m}Q</span>`;
             }
         }
         return '';
+    }
+
+    function getAchievementBadges(qCount, totalPts, matchesPlayed, maxQInSingleMatch) {
+        let badges = '';
+        if (qCount >= 10 && (qCount / (matchesPlayed * 20)) >= 0.7) {
+            badges += `<span class="achievement-badge" title="Sharpshooter: 70%+ accuracy">🎯 Sharpshooter</span>`;
+        }
+        if (maxQInSingleMatch >= 3) {
+            badges += `<span class="achievement-badge" title="On Fire: 3+ tossups in a single match">🔥 On Fire</span>`;
+        }
+        if (matchesPlayed >= 5) {
+            badges += `<span class="achievement-badge" title="Veteran: Played 5+ matches">⭐ Veteran</span>`;
+        }
+        if (totalPts >= 100) {
+            badges += `<span class="achievement-badge" title="Centurion: Scored 100+ points">💯 Centurion</span>`;
+        }
+        return badges;
     }
 
     function playClickSound() {
@@ -686,6 +788,7 @@
             document.documentElement.setAttribute('data-theme', 'dark');
             document.getElementById('darkModeBtn').innerText = '☀️ Light Mode';
         }
+        buildStartingLineupUI();
         buildScoreSheet();
     });
 
@@ -728,6 +831,7 @@
         playClickSound();
         document.getElementById('rosterModal').style.display = 'none';
         localStorage.setItem('scholar_bowl_roster', JSON.stringify(schoolRoster));
+        buildStartingLineupUI();
         buildScoreSheet();
     }
 
@@ -754,6 +858,113 @@
         playClickSound();
         schoolRoster.splice(index, 1);
         renderRosterTags();
+    }
+
+    function buildStartingLineupUI() {
+        const grid = document.getElementById('startingLineupGrid');
+        if (!grid) return;
+
+        let savedLineup = [];
+        try {
+            savedLineup = JSON.parse(localStorage.getItem('scholar_bowl_lineup')) || [schoolRoster[0]||'', schoolRoster[1]||'', schoolRoster[2]||'', schoolRoster[3]||''];
+        } catch(e) { savedLineup = ['', '', '', '']; }
+
+        let html = '';
+        for (let i = 0; i < 4; i++) {
+            let options = '<option value="">Select Starter...</option>';
+            schoolRoster.forEach(p => {
+                let sel = (savedLineup[i] === p) ? 'selected' : '';
+                options += `<option value="${p}" ${sel}>${p}</option>`;
+            });
+            html += `
+                <div class="lineup-item">
+                    <label>Starter ${i + 1}</label>
+                    <select class="starter-select" data-index="${i}" onchange="saveLineupState()">${options}</select>
+                </div>
+            `;
+        }
+        grid.innerHTML = html;
+        renderSwapRows();
+    }
+
+    function saveLineupState() {
+        playClickSound();
+        const selects = document.querySelectorAll('.starter-select');
+        let lineup = [];
+        selects.forEach(s => lineup.push(s.value));
+        localStorage.setItem('scholar_bowl_lineup', JSON.stringify(lineup));
+    }
+
+    function addSwapRow() {
+        playClickSound();
+        let swaps = [];
+        try {
+            swaps = JSON.parse(localStorage.getItem('scholar_bowl_swaps')) || [];
+        } catch(e) { swaps = []; }
+
+        swaps.push({ qNum: 'Q1', playerOut: '', playerIn: '' });
+        localStorage.setItem('scholar_bowl_swaps', JSON.stringify(swaps));
+        renderSwapRows();
+    }
+
+    function removeSwapRow(index) {
+        playClickSound();
+        let swaps = [];
+        try {
+            swaps = JSON.parse(localStorage.getItem('scholar_bowl_swaps')) || [];
+        } catch(e) { swaps = []; }
+
+        swaps.splice(index, 1);
+        localStorage.setItem('scholar_bowl_swaps', JSON.stringify(swaps));
+        renderSwapRows();
+    }
+
+    function renderSwapRows() {
+        const container = document.getElementById('swapsContainer');
+        if (!container) return;
+
+        let swaps = [];
+        try {
+            swaps = JSON.parse(localStorage.getItem('scholar_bowl_swaps')) || [];
+        } catch(e) { swaps = []; }
+
+        if (swaps.length === 0) {
+            container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">No substitutions recorded for this match.</p>';
+            return;
+        }
+
+        let html = '<p style="font-size: 13px; font-weight: bold; margin-bottom: 4px;">Recorded Substitutions:</p>';
+        swaps.forEach((swap, idx) => {
+            html += `
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" value="${swap.qNum}" placeholder="e.g. Q6" style="width: 80px; padding: 6px;" oninput="updateSwap(${idx}, 'qNum', this.value)">
+                    <span style="font-size: 13px; font-weight: bold;">OUT:</span>
+                    <select style="padding: 6px; flex: 1;" onchange="updateSwap(${idx}, 'playerOut', this.value)">
+                        <option value="">Select Player Out...</option>
+                        ${schoolRoster.map(p => `<option value="${p}" ${swap.playerOut === p ? 'selected' : ''}>${p}</option>`).join('')}
+                    </select>
+                    <span style="font-size: 13px; font-weight: bold;">IN:</span>
+                    <select style="padding: 6px; flex: 1;" onchange="updateSwap(${idx}, 'playerIn', this.value)">
+                        <option value="">Select Player In...</option>
+                        ${schoolRoster.map(p => `<option value="${p}" ${swap.playerIn === p ? 'selected' : ''}>${p}</option>`).join('')}
+                    </select>
+                    <button class="danger" style="padding: 6px 10px; font-size: 12px;" onclick="removeSwapRow(${idx})">✕</button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function updateSwap(index, field, value) {
+        let swaps = [];
+        try {
+            swaps = JSON.parse(localStorage.getItem('scholar_bowl_swaps')) || [];
+        } catch(e) { swaps = []; }
+
+        if (swaps[index]) {
+            swaps[index][field] = value;
+            localStorage.setItem('scholar_bowl_swaps', JSON.stringify(swaps));
+        }
     }
 
     function buildScoreSheet() {
@@ -1173,21 +1384,27 @@
         let analyticsMatchCounts = {};
         let winsMap = {};
         let lossesMap = {};
+        let maxQPerMatchMap = {};
 
         schoolRoster.forEach(p => {
-            realStats[p] = { q: 0, points: 0 };
-            practiceStats[p] = { q: 0, points: 0 };
+            realStats[p] = { q: 0, points: 0, matches: 0 };
+            practiceStats[p] = { q: 0, points: 0, matches: 0 };
             analyticsStats[p] = { q: 0, points: 0 };
             matchCounts[p] = 0;
             analyticsMatchCounts[p] = 0;
             winsMap[p] = 0;
             lossesMap[p] = 0;
+            maxQPerMatchMap[p] = 0;
         });
 
         savedMatches.forEach(m => {
             let playersInMatch = new Set();
+            let playerMatchQ = {};
+
             m.records.forEach(r => {
                 playersInMatch.add(r.player);
+                playerMatchQ[r.player] = (playerMatchQ[r.player] || 0) + r.qCorrect;
+
                 if (m.type === 'real' && realStats[r.player]) {
                     realStats[r.player].q += r.qCorrect;
                     realStats[r.player].points += r.points;
@@ -1210,7 +1427,15 @@
             });
 
             playersInMatch.forEach(p => {
-                if (m.type === 'real' && matchCounts[p] !== undefined) matchCounts[p]++;
+                let matchQCount = playerMatchQ[p] || 0;
+                if (matchQCount > (maxQPerMatchMap[p] || 0)) {
+                    maxQPerMatchMap[p] = matchQCount;
+                }
+
+                if (m.type === 'real') {
+                    if (matchCounts[p] !== undefined) matchCounts[p]++;
+                    if (realStats[p]) realStats[p].matches++;
+                }
                 
                 if (filterVal === 'all' || m.type === filterVal) {
                     if (analyticsMatchCounts[p] !== undefined) analyticsMatchCounts[p]++;
@@ -1227,16 +1452,18 @@
         realArr.forEach((item, index) => {
             let mvpTag = (index === 0 && item.points > 0) ? '<span class="mvp-badge">MVP</span>' : '';
             let milestoneTag = getMilestoneBadge(item.q);
+            let achievementTags = getAchievementBadges(item.q, item.points, matchCounts[item.player] || 1, maxQPerMatchMap[item.player] || 0);
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player} ${mvpTag} ${milestoneTag}</td><td>${item.q}</td><td>${item.points}</td>`;
+            tr.innerHTML = `<td>${index + 1}</td><td>${item.player} ${mvpTag} ${milestoneTag} ${achievementTags}</td><td><strong>${item.matches}</strong></td><td>${item.q}</td><td>${item.points}</td>`;
             realTableBody.appendChild(tr);
         });
 
         let practiceArr = Object.keys(practiceStats).map(p => ({ player: p, ...practiceStats[p] })).sort((a, b) => b.points - a.points);
         practiceArr.forEach((item, index) => {
             let milestoneTag = getMilestoneBadge(item.q);
+            let achievementTags = getAchievementBadges(item.q, item.points, matchCounts[item.player] || 1, maxQPerMatchMap[item.player] || 0);
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player} ${milestoneTag}</td><td>${item.q}</td><td>${item.points}</td>`;
+            tr.innerHTML = `<td>${index + 1}</td><td>${item.player} ${milestoneTag} ${achievementTags}</td><td>${item.q}</td><td>${item.points}</td>`;
             practiceTableBody.appendChild(tr);
         });
 
@@ -1259,11 +1486,13 @@
             let losses = lossesMap[p] || 0;
             let barWidth = Math.min(100, Math.round((stats.points / maxPts) * 100));
             let milestoneTag = getMilestoneBadge(totalQ);
+            let achievementTags = getAchievementBadges(totalQ, stats.points, matches, maxQPerMatchMap[p] || 0);
 
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${p}</strong> ${milestoneTag}</td>
+                <td><strong>${p}</strong> ${milestoneTag} ${achievementTags}</td>
                 <td><span style="color: var(--accent); font-weight: bold;">${wins}-${losses}</span></td>
+                <td><strong>${matches}</strong></td>
                 <td>${totalQ}</td>
                 <td>${accuracy}%</td>
                 <td>
