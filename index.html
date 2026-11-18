@@ -95,6 +95,14 @@
             margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
+            justify-content: space-between;
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         select, input, button {
@@ -117,6 +125,18 @@
             background: var(--primary-dark);
         }
 
+        button.success {
+            background: #22c55e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button.success:hover {
+            background: #16a34a;
+        }
+
         button.danger {
             background: #ef4444;
             color: white;
@@ -127,6 +147,26 @@
 
         button.danger:hover {
             background: #dc2626;
+        }
+
+        /* Live Score Banner */
+        .live-score-banner {
+            display: flex;
+            justify-content: space-around;
+            background: #1e293b;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .live-score-banner div span {
+            color: #38bdf8;
+            font-size: 22px;
+            margin-left: 10px;
         }
 
         .score-table-wrapper {
@@ -195,7 +235,6 @@
             font-weight: 600;
         }
 
-        /* Camera / Photo preview styling */
         .photo-preview-container {
             margin-top: 15px;
             text-align: center;
@@ -216,7 +255,7 @@
     <header>
         <h1>Scholar Bowl Tossup Tracker</h1>
         <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('scorekeeper')">Score Sheet (20 Q)</button>
+            <button class="tab-btn active" onclick="switchTab('scorekeeper')">Score Sheet</button>
             <button class="tab-btn" onclick="switchTab('camera')">Scan / Review Photo</button>
             <button class="tab-btn" onclick="switchTab('leaderboards')">Leaderboards</button>
         </div>
@@ -226,33 +265,46 @@
     <div id="scorekeeper" class="tab-content active">
         <div class="card">
             <div class="controls-bar">
-                <label><strong>Match Type:</strong></label>
-                <select id="matchType" onchange="updateScorecard()">
-                    <option value="real">Real Match</option>
-                    <option value="practice">Practice Match</option>
-                </select>
+                <div class="controls-group">
+                    <label><strong>Match Type:</strong></label>
+                    <select id="matchType" onchange="updateScorecard()">
+                        <option value="real">Real Match</option>
+                        <option value="practice">Practice Match</option>
+                    </select>
 
-                <label><strong>Match Name:</strong></label>
-                <input type="text" id="matchName" value="Match 1" placeholder="e.g., Match vs West High" oninput="saveCurrentSheetState()">
+                    <label><strong>Match Name:</strong></label>
+                    <input type="text" id="matchName" value="Match 1" placeholder="e.g., Match vs West High" oninput="saveCurrentSheetState()">
+                </div>
 
-                <button class="primary" onclick="saveMatchData()">Save Match to Leaderboard</button>
-                <button class="danger" onclick="clearAllData()">Clear All Data & History</button>
+                <div class="controls-group">
+                    <button class="success" onclick="addOvertimeRow()">+ Add Overtime Question</button>
+                    <button class="primary" onclick="saveMatchData()">Save Match to Leaderboard</button>
+                    <button class="danger" onclick="clearAllData()">Clear All Data</button>
+                </div>
+            </div>
+
+            <!-- Live Match Score Banner -->
+            <div class="live-score-banner">
+                <div>Team 1 Score: <span id="team1TotalScore">0</span></div>
+                <div>Team 2 Score: <span id="team2TotalScore">0</span></div>
             </div>
 
             <div class="score-table-wrapper">
                 <table class="score-sheet">
                     <thead>
                         <tr>
+                            <th style="width: 4%;">Q#</th>
                             <th class="team-red-header" colspan="5">Team 1 (School Roster)</th>
                             <th class="team-green-header" colspan="5">Team 2 (Opponent / Practice)</th>
                         </tr>
                         <tr>
-                            <th style="width: 16%;">Player</th>
+                            <th>#</th>
+                            <th style="width: 15%;">Player</th>
                             <th style="width: 5%;">Q</th>
                             <th style="width: 5%;">B1</th>
                             <th style="width: 5%;">B2</th>
                             <th style="width: 5%;">B3</th>
-                            <th style="width: 16%;">Player</th>
+                            <th style="width: 15%;">Player</th>
                             <th style="width: 5%;">Q</th>
                             <th style="width: 5%;">B1</th>
                             <th style="width: 5%;">B2</th>
@@ -327,6 +379,7 @@
     const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
 
     let savedMatches = JSON.parse(localStorage.getItem('scholar_bowl_matches') || '[]');
+    let totalQuestionsCount = parseInt(localStorage.getItem('scholar_bowl_row_count') || '20');
 
     function switchTab(tabId) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -358,11 +411,12 @@
         let t1Options = '<option value="N/A">N/A</option>';
         schoolRoster.forEach(p => { t1Options += `<option value="${p}">${p}</option>`; });
 
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < totalQuestionsCount; i++) {
             let rowData = savedState[i] || { t1p: 'N/A', t1q: '', t1b1: '', t1b2: '', t1b3: '', t2p: 'N/A', t2q: '', t2b1: '', t2b2: '', t2b3: '' };
             
             htmlRows += `
                 <tr>
+                    <td style="font-weight:bold; background:#f1f5f9;">${i + 1}</td>
                     <td><select class="t1-player" data-row="${i}" onchange="saveCurrentSheetState()">${t1Options}</select></td>
                     <td><input type="text" class="t1-q" value="${rowData.t1q}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
                     <td><input type="text" class="t1-b1" value="${rowData.t1b1}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
@@ -396,6 +450,37 @@
         if(savedPhoto) {
             document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Saved Photo Review:</strong></p><img src="${savedPhoto}" alt="Score Sheet Photo">`;
         }
+
+        calculateLiveScores();
+    }
+
+    function addOvertimeRow() {
+        totalQuestionsCount++;
+        localStorage.setItem('scholar_bowl_row_count', totalQuestionsCount);
+        saveCurrentSheetState();
+        buildScoreSheet();
+    }
+
+    function calculateLiveScores() {
+        const rows = document.querySelectorAll('#scoreSheetBody tr');
+        let t1Score = 0;
+        let t2Score = 0;
+
+        rows.forEach(tr => {
+            // Team 1 values
+            ['t1-q', 't1-b1', 't1-b2', 't1-b3'].forEach(cls => {
+                let val = parseInt(tr.querySelector(`.${cls}`).value) || 0;
+                if (val > 0) t1Score += val;
+            });
+            // Team 2 values
+            ['t2-q', 't2-b1', 't2-b2', 't2-b3'].forEach(cls => {
+                let val = parseInt(tr.querySelector(`.${cls}`).value) || 0;
+                if (val > 0) t2Score += val;
+            });
+        });
+
+        document.getElementById('team1TotalScore').innerText = t1Score;
+        document.getElementById('team2TotalScore').innerText = t2Score;
     }
 
     function saveCurrentSheetState() {
@@ -418,6 +503,7 @@
         localStorage.setItem('scholar_bowl_current_sheet', JSON.stringify(state));
         localStorage.setItem('scholar_bowl_match_name', document.getElementById('matchName').value);
         localStorage.setItem('scholar_bowl_match_type', document.getElementById('matchType').value);
+        calculateLiveScores();
     }
 
     function updateScorecard() { 
@@ -445,9 +531,10 @@
     }
 
     function clearAllData() {
-        if(confirm("Are you sure? This will wipe out the current sheet, uploaded photo, all saved match history, and reset all leaderboards.")) {
+        if(confirm("Are you sure? This will wipe out the current sheet, photo, saved match history, and reset leaderboards.")) {
             localStorage.clear();
             savedMatches = [];
+            totalQuestionsCount = 20;
             buildScoreSheet();
             clearPhoto();
             alert("All history and leaderboards have been completely reset.");
@@ -479,6 +566,8 @@
         alert(`Match "${matchName}" successfully saved to leaderboard!`);
         localStorage.removeItem('scholar_bowl_current_sheet');
         localStorage.removeItem('scholar_bowl_photo');
+        localStorage.removeItem('scholar_bowl_row_count');
+        totalQuestionsCount = 20;
         clearPhoto();
         buildScoreSheet();
     }
