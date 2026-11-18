@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scholar Bowl Tossup Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #047857;
@@ -18,21 +19,23 @@
             --table-th-bg: #e2e8f0;
             --table-th-color: #1e293b;
             --table-row-bg: #ffffff;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
         }
 
         [data-theme="dark"] {
             --primary: #059669;
             --primary-dark: #047857;
             --accent: #34d399;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            --bg-color: #0b0f19;
+            --card-bg: #151c2c;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --border: #334155;
+            --border: #2a3447;
             --banner-bg: #020617;
-            --table-th-bg: #334155;
+            --table-th-bg: #1e293b;
             --table-th-color: #f8fafc;
-            --table-row-bg: #1e293b;
+            --table-row-bg: #151c2c;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -40,13 +43,13 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+            transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            padding: 20px;
+            padding: 25px;
         }
 
         .container {
@@ -59,13 +62,14 @@
             justify-content: space-between;
             align-items: center;
             background: var(--card-bg);
-            padding: 15px 30px;
-            border-radius: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-            margin-bottom: 20px;
+            padding: 18px 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
             flex-wrap: wrap;
             gap: 15px;
             border-bottom: 4px solid var(--primary);
+            border: 1px solid var(--border);
         }
 
         .brand-wrapper {
@@ -75,14 +79,19 @@
         }
 
         .brand-logo {
-            height: 48px;
+            height: 52px;
             width: auto;
             object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(4, 120, 87, 0.2));
+        }
+
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
         }
 
         h1 {
             color: var(--text-main);
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 800;
             letter-spacing: -0.5px;
         }
@@ -90,40 +99,50 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
         .nav-tabs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
         .tab-btn {
-            padding: 10px 20px;
-            border: none;
-            background: var(--border);
+            padding: 10px 18px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
             color: var(--text-main);
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-1px);
         }
 
         .tab-btn.active {
             background: var(--primary);
             color: white;
-            box-shadow: 0 2px 6px rgba(4, 120, 87, 0.3);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3);
         }
 
         .dark-mode-toggle {
-            background: var(--border);
+            background: var(--card-bg);
             color: var(--text-main);
-            border: none;
+            border: 1px solid var(--border);
             padding: 10px 15px;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
+        }
+
+        .dark-mode-toggle:hover {
+            border-color: var(--primary);
         }
 
         .tab-content {
@@ -132,21 +151,27 @@
 
         .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .card {
             background: var(--card-bg);
-            border-radius: 14px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
             border: 1px solid var(--border);
         }
 
         .controls-bar {
             display: flex;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
@@ -154,19 +179,24 @@
 
         .controls-group {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
             align-items: center;
         }
 
         select, input, button {
-            padding: 10px 15px;
+            padding: 10px 16px;
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 14px;
             outline: none;
             background: var(--card-bg);
             color: var(--text-main);
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.15);
         }
 
         button.primary {
@@ -175,10 +205,12 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
+            box-shadow: 0 2px 6px rgba(4, 120, 87, 0.2);
         }
 
         button.primary:hover {
             background: var(--primary-dark);
+            transform: translateY(-1px);
         }
 
         button.success {
@@ -189,6 +221,11 @@
             font-weight: 600;
         }
 
+        button.success:hover {
+            background: #047857;
+            transform: translateY(-1px);
+        }
+
         button.danger {
             background: #dc2626;
             color: white;
@@ -197,30 +234,37 @@
             font-weight: 600;
         }
 
+        button.danger:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
         /* Live Score Banner */
         .live-score-banner {
             display: flex;
             justify-content: space-around;
             background: var(--banner-bg);
             color: white;
-            padding: 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
             font-size: 18px;
             font-weight: bold;
             text-align: center;
             border-left: 6px solid var(--primary);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         }
 
         .live-score-banner div span {
             color: var(--accent);
-            font-size: 24px;
+            font-size: 26px;
             margin-left: 10px;
+            font-family: 'Outfit', sans-serif;
         }
 
         .score-table-wrapper {
             overflow-x: auto;
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid var(--border);
         }
 
@@ -235,7 +279,7 @@
 
         table.score-sheet th, table.score-sheet td {
             border: 1px solid var(--border);
-            padding: 8px 6px;
+            padding: 10px 8px;
         }
 
         table.score-sheet th {
@@ -257,30 +301,35 @@
         /* Tactile Score Buttons */
         .score-btn-group {
             display: flex;
-            gap: 2px;
+            gap: 3px;
             justify-content: center;
         }
 
         .score-pill {
-            padding: 5px 8px;
+            padding: 6px 9px;
             font-size: 11px;
             font-weight: 700;
             border: 1px solid var(--border);
-            border-radius: 5px;
+            border-radius: 6px;
             background: var(--bg-color);
             color: var(--text-main);
             cursor: pointer;
         }
 
-        .score-pill.active-15 { background: #059669; color: white; border-color: #047857; }
-        .score-pill.active-10 { background: #10b981; color: white; border-color: #059669; }
+        .score-pill:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .score-pill.active-15 { background: #059669; color: white; border-color: #047857; box-shadow: 0 0 8px rgba(5, 150, 105, 0.4); }
+        .score-pill.active-10 { background: #10b981; color: white; border-color: #059669; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
         .score-pill.active-neg { background: #d97706; color: white; border-color: #b45309; }
         .score-pill.active-x { background: #dc2626; color: white; border-color: #b91c1c; }
 
         .leaderboard-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 25px;
         }
 
         @media(max-width: 900px) {
@@ -292,11 +341,14 @@
         .lb-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
         }
 
         .lb-table th, .lb-table td {
-            padding: 12px;
+            padding: 14px;
             text-align: left;
             border-bottom: 1px solid var(--border);
         }
@@ -304,13 +356,44 @@
         .lb-table th {
             background: var(--table-th-bg);
             color: var(--table-th-color);
-            font-weight: 600;
+            font-weight: 700;
+        }
+
+        .lb-table tr:hover {
+            background-color: rgba(4, 120, 87, 0.04);
+        }
+
+        /* Stat Bar inside table */
+        .stat-bar-container {
+            width: 100%;
+            background: var(--border);
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .stat-bar-fill {
+            background: var(--primary);
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .mvp-badge {
+            background: #d97706;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            vertical-align: middle;
         }
 
         .photo-review-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 25px;
             align-items: start;
         }
 
@@ -322,9 +405,10 @@
 
         .photo-preview-container img {
             max-width: 100%;
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid var(--border);
             margin-top: 10px;
+            box-shadow: var(--shadow);
         }
 
         .response-table {
@@ -332,13 +416,13 @@
             border-collapse: collapse;
             margin-top: 10px;
             background: var(--table-row-bg);
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
             border: 1px solid var(--border);
         }
 
         .response-table th, .response-table td {
-            padding: 10px 12px;
+            padding: 12px 14px;
             text-align: left;
             border-bottom: 1px solid var(--border);
             font-size: 14px;
@@ -347,10 +431,9 @@
         .response-table th {
             background: var(--table-th-bg);
             color: var(--table-th-color);
-            font-weight: 600;
+            font-weight: 700;
         }
 
-        /* Roster Modal Styling */
         .roster-tag-list {
             display: flex;
             flex-wrap: wrap;
@@ -361,12 +444,13 @@
 
         .roster-tag {
             background: var(--border);
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 13px;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-weight: 600;
         }
 
         .roster-tag button {
@@ -470,7 +554,7 @@
                 </div>
                 <div>
                     <h3>Extracted Roster & Player Stats</h3>
-                    <div id="scanStatusBox" style="background: var(--bg-color); border: 1px solid var(--border); padding: 15px; border-radius: 8px; min-height: 200px; font-size: 14px; color: var(--text-muted);">
+                    <div id="scanStatusBox" style="background: var(--bg-color); border: 1px solid var(--border); padding: 15px; border-radius: 10px; min-height: 200px; font-size: 14px; color: var(--text-muted);">
                         Waiting for photo upload...
                     </div>
                 </div>
@@ -507,33 +591,35 @@
                     <h3>Player Efficiency & Analytics</h3>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <label style="font-size: 13px; font-weight: bold;">View Category:</label>
-                        <select id="analyticsFilter" onchange="renderLeaderboards()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                        <select id="analyticsFilter" onchange="renderLeaderboards()" style="padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);">
                             <option value="all">All Matches (Combined)</option>
                             <option value="real">Real Matches Only</option>
                             <option value="practice">Practice Matches Only</option>
                         </select>
                     </div>
                 </div>
-                <table class="lb-table" id="analyticsTable">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>W - L Record</th>
-                            <th>Tossups Correct</th>
-                            <th>Accuracy (%)</th>
-                            <th>Total Points</th>
-                            <th>Average Pts / Match</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div class="score-table-wrapper">
+                    <table class="lb-table" id="analyticsTable">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>W - L Record</th>
+                                <th>Tossups Correct</th>
+                                <th>Accuracy (%)</th>
+                                <th>Total Points</th>
+                                <th>Average Pts / Match</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Roster Management Modal -->
-<div id="rosterModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:1000;">
+<div id="rosterModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter: blur(4px); align-items:center; justify-content:center; z-index:1000;">
     <div class="card" style="width: 450px; max-width: 90%;">
         <h3>Manage Team Roster</h3>
         <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Add or remove players from your active school roster.</p>
@@ -915,7 +1001,6 @@
                             }
                         });
 
-                        // Determine win/loss for scanned match based on Team 1 vs Team 2 scores
                         let t1Score = data.data.team1Score || 0;
                         let t2Score = data.data.team2Score || 0;
                         let matchOutcome = t1Score >= t2Score ? 'win' : 'loss';
@@ -1014,7 +1099,6 @@
                 matchRecords.push({ player: t1Player, qCorrect: 1, points: parseInt(t1Q) });
                 t1Total += parseInt(t1Q);
             }
-            // Add bonus points calc if present
             ['t1-b1', 't1-b2', 't1-b3'].forEach(bCls => {
                 let bInput = tr.querySelector(`.${bCls}`);
                 if(bInput && bInput.value === '10') t1Total += 10;
@@ -1105,7 +1189,6 @@
             playersInMatch.forEach(p => {
                 if (m.type === 'real' && matchCounts[p] !== undefined) matchCounts[p]++;
                 
-                // Track Wins and Losses per player
                 if (filterVal === 'all' || m.type === filterVal) {
                     if (analyticsMatchCounts[p] !== undefined) analyticsMatchCounts[p]++;
                     if (m.outcome === 'win') {
@@ -1119,8 +1202,9 @@
 
         let realArr = Object.keys(realStats).map(p => ({ player: p, ...realStats[p] })).sort((a, b) => b.points - a.points);
         realArr.forEach((item, index) => {
+            let mvpTag = (index === 0 && item.points > 0) ? '<span class="mvp-badge">MVP</span>' : '';
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
+            tr.innerHTML = `<td>${index + 1}</td><td>${item.player} ${mvpTag}</td><td>${item.q}</td><td>${item.points}</td>`;
             realTableBody.appendChild(tr);
         });
 
@@ -1131,27 +1215,36 @@
             practiceTableBody.appendChild(tr);
         });
 
-        // Render Analytics Breakdown with W-L and Accuracy (%)
+        // Find max points for relative stat bar scaling
+        let maxPts = 1;
+        schoolRoster.forEach(p => {
+            let pts = analyticsStats[p]?.points || 0;
+            if (pts > maxPts) maxPts = pts;
+        });
+
         schoolRoster.forEach(p => {
             let stats = analyticsStats[p] || { q: 0, points: 0 };
             let matches = analyticsMatchCounts[p] || 1;
             let avgPts = (stats.points / matches).toFixed(1);
             let totalQ = stats.q;
             
-            // Assuming approx 20 tossups per match total for conversion accuracy percentage calculation
             let totalQuestionsHeard = matches * 20; 
             let accuracy = totalQuestionsHeard > 0 ? ((totalQ / totalQuestionsHeard) * 100).toFixed(1) : '0.0';
 
             let wins = winsMap[p] || 0;
             let losses = lossesMap[p] || 0;
+            let barWidth = Math.min(100, Math.round((stats.points / maxPts) * 100));
 
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${p}</td>
-                <td><strong>${wins}-${losses}</strong></td>
+                <td><strong>${p}</strong></td>
+                <td><span style="color: var(--accent); font-weight: bold;">${wins}-${losses}</span></td>
                 <td>${totalQ}</td>
                 <td>${accuracy}%</td>
-                <td>${stats.points} pts</td>
+                <td>
+                    ${stats.points} pts
+                    <div class="stat-bar-container"><div class="stat-bar-fill" style="width: ${barWidth}%;"></div></div>
+                </td>
                 <td>${avgPts} pts</td>
             `;
             analyticsTableBody.appendChild(tr);
