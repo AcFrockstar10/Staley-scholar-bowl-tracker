@@ -6,7 +6,7 @@
     <title>Scholar Bowl Tossup Tracker</title>
     <style>
         :root {
-            --primary: #047857; /* Deep Falcon Green */
+            --primary: #047857;
             --primary-dark: #065f46;
             --accent: #10b981;
             --bg-color: #f1f5f9;
@@ -14,6 +14,25 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border: #cbd5e1;
+            --banner-bg: #0f172a;
+            --table-th-bg: #e2e8f0;
+            --table-th-color: #1e293b;
+            --table-row-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --primary: #059669;
+            --primary-dark: #047857;
+            --accent: #34d399;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --banner-bg: #020617;
+            --table-th-bg: #334155;
+            --table-th-color: #f8fafc;
+            --table-row-bg: #1e293b;
         }
 
         * {
@@ -21,6 +40,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
 
         body {
@@ -67,6 +87,13 @@
             letter-spacing: -0.5px;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
         .nav-tabs {
             display: flex;
             gap: 10px;
@@ -76,22 +103,27 @@
         .tab-btn {
             padding: 10px 20px;
             border: none;
-            background: #e2e8f0;
+            background: var(--border);
             color: var(--text-main);
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tab-btn:hover {
-            background: #cbd5e1;
         }
 
         .tab-btn.active {
             background: var(--primary);
             color: white;
             box-shadow: 0 2px 6px rgba(4, 120, 87, 0.3);
+        }
+
+        .dark-mode-toggle {
+            background: var(--border);
+            color: var(--text-main);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
         }
 
         .tab-content {
@@ -133,6 +165,8 @@
             border-radius: 8px;
             font-size: 14px;
             outline: none;
+            background: var(--card-bg);
+            color: var(--text-main);
         }
 
         button.primary {
@@ -141,7 +175,6 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
-            transition: background 0.2s;
         }
 
         button.primary:hover {
@@ -156,10 +189,6 @@
             font-weight: 600;
         }
 
-        button.success:hover {
-            background: #047857;
-        }
-
         button.danger {
             background: #dc2626;
             color: white;
@@ -168,15 +197,11 @@
             font-weight: 600;
         }
 
-        button.danger:hover {
-            background: #b91c1c;
-        }
-
         /* Live Score Banner */
         .live-score-banner {
             display: flex;
             justify-content: space-around;
-            background: #0f172a;
+            background: var(--banner-bg);
             color: white;
             padding: 16px;
             border-radius: 10px;
@@ -188,7 +213,7 @@
         }
 
         .live-score-banner div span {
-            color: #34d399;
+            color: var(--accent);
             font-size: 24px;
             margin-left: 10px;
         }
@@ -204,18 +229,18 @@
             border-collapse: collapse;
             text-align: center;
             font-size: 14px;
-            background: white;
+            background: var(--table-row-bg);
             min-width: 950px;
         }
 
         table.score-sheet th, table.score-sheet td {
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border);
             padding: 8px 6px;
         }
 
         table.score-sheet th {
-            background: #e2e8f0;
-            color: #1e293b;
+            background: var(--table-th-bg);
+            color: var(--table-th-color);
             font-weight: 700;
         }
 
@@ -242,9 +267,9 @@
             font-weight: 700;
             border: 1px solid var(--border);
             border-radius: 5px;
-            background: #f1f5f9;
+            background: var(--bg-color);
+            color: var(--text-main);
             cursor: pointer;
-            transition: all 0.1s;
         }
 
         .score-pill.active-15 { background: #059669; color: white; border-color: #047857; }
@@ -277,8 +302,8 @@
         }
 
         .lb-table th {
-            background: #f8fafc;
-            color: var(--text-muted);
+            background: var(--table-th-bg);
+            color: var(--table-th-color);
             font-weight: 600;
         }
 
@@ -306,7 +331,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
-            background: white;
+            background: var(--table-row-bg);
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid var(--border);
@@ -320,8 +345,8 @@
         }
 
         .response-table th {
-            background: #f8fafc;
-            color: var(--text-muted);
+            background: var(--table-th-bg);
+            color: var(--table-th-color);
             font-weight: 600;
         }
     </style>
@@ -331,14 +356,16 @@
 <div class="container">
     <header>
         <div class="brand-wrapper">
-            <!-- Replace 'logo1.png' with your image file name in your repo -->
             <img src="logo1.png" alt="Mascot Logo" class="brand-logo">
             <h1>Scholar Bowl Tossup Tracker</h1>
         </div>
-        <div class="nav-tabs">
-            <button class="tab-btn active" id="btn-scorekeeper" onclick="switchTab('scorekeeper')">Score Sheet</button>
-            <button class="tab-btn" id="btn-photoScan" onclick="switchTab('photoScan')">Photo Scan & API</button>
-            <button class="tab-btn" id="btn-leaderboards" onclick="switchTab('leaderboards')">Leaderboards</button>
+        <div class="header-actions">
+            <button class="dark-mode-toggle" id="darkModeBtn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+            <div class="nav-tabs">
+                <button class="tab-btn active" id="btn-scorekeeper" onclick="switchTab('scorekeeper')">Score Sheet</button>
+                <button class="tab-btn" id="btn-photoScan" onclick="switchTab('photoScan')">Photo Scan & API</button>
+                <button class="tab-btn" id="btn-leaderboards" onclick="switchTab('leaderboards')">Leaderboards</button>
+            </div>
         </div>
     </header>
 
@@ -413,7 +440,7 @@
                 </div>
                 <div>
                     <h3>Extracted Roster & Player Stats</h3>
-                    <div id="scanStatusBox" style="background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; min-height: 200px; font-size: 14px; color: var(--text-muted);">
+                    <div id="scanStatusBox" style="background: var(--bg-color); border: 1px solid var(--border); padding: 15px; border-radius: 8px; min-height: 200px; font-size: 14px; color: var(--text-muted);">
                         Waiting for photo upload...
                     </div>
                 </div>
@@ -446,11 +473,33 @@
 </div>
 
 <script>
-    const schoolRoster = ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic", "Siddharth", "Ryan", "Stewart", "Prithvi", "Chaitanya"];
+    // Clean roster without placeholder names
+    const schoolRoster = ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic"];
     const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
 
     let totalQuestionsCount = 20;
     let lastScannedMatchData = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        // Load Dark Mode Preference
+        if (localStorage.getItem('scholar_bowl_theme') === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.getElementById('darkModeBtn').innerText = '☀️ Light Mode';
+        }
+        buildScoreSheet();
+    });
+
+    function toggleDarkMode() {
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('scholar_bowl_theme', 'light');
+            document.getElementById('darkModeBtn').innerText = '🌙 Dark Mode';
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('scholar_bowl_theme', 'dark');
+            document.getElementById('darkModeBtn').innerText = '☀️ Light Mode';
+        }
+    }
 
     function switchTab(tabName) {
         ['scorekeeper', 'photoScan', 'leaderboards'].forEach(t => {
@@ -466,10 +515,6 @@
 
         if (tabName === 'leaderboards') renderLeaderboards();
     }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        buildScoreSheet();
-    });
 
     function buildScoreSheet() {
         const tbody = document.getElementById('scoreSheetBody');
@@ -499,7 +544,7 @@
             
             htmlRows += `
                 <tr>
-                    <td style="font-weight:bold; background:#f1f5f9;">${i + 1}</td>
+                    <td style="font-weight:bold;">${i + 1}</td>
                     <td><select class="t1-player" data-row="${i}" onchange="saveCurrentSheetState()">${t1Options}</select></td>
                     <td>${createScoreButtons('t1-q', rowData.t1q, true)}</td>
                     <td>${createScoreButtons('t1-b1', rowData.t1b1, false)}</td>
@@ -653,7 +698,6 @@
         buildScoreSheet(); 
     }
 
-    // --- Levenshtein Distance Safety Check (<= 2 letter difference) ---
     function getEditDistance(a, b) {
         if (a.length === 0) return b.length;
         if (b.length === 0) return a.length;
@@ -749,7 +793,7 @@
                         });
 
                         document.getElementById('scanStatusBox').innerHTML = `
-                            <p style="color: #059669; font-weight: bold; margin-bottom: 8px;">✓ ${data.message}</p>
+                            <p style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">✓ ${data.message}</p>
                             <p style="margin-bottom: 6px;"><strong>Match:</strong> ${data.data.matchName || 'Match'}</p>
                             <p style="margin-bottom: 10px;"><strong>Team Scores:</strong> Team 1 (${data.data.team1Score || 0}) - Team 2 (${data.data.team2Score || 0})</p>
                             <p style="font-weight: bold; margin-bottom: 4px;">Verified Roster & Stats (≤ 2 letter variance):</p>
