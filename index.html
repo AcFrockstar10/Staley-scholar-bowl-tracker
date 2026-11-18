@@ -286,7 +286,7 @@
         <h1>Scholar Bowl Tossup Tracker (NAQT Style)</h1>
         <div class="nav-tabs">
             <button class="tab-btn active" id="btn-scorekeeper" onclick="switchTab('scorekeeper')">Score Sheet</button>
-            <button class="tab-btn" id="btn-aiScan" onclick="switchTab('aiScan')">Fast Photo Scan & Review</button>
+            <button class="tab-btn" id="btn-photoScan" onclick="switchTab('photoScan')">Photo Scan & API</button>
             <button class="tab-btn" id="btn-leaderboards" onclick="switchTab('leaderboards')">Leaderboards</button>
         </div>
     </header>
@@ -347,23 +347,23 @@
         </div>
     </div>
 
-    <!-- AI Scan Tab -->
-    <div id="tab-aiScan" class="tab-content">
+    <!-- Photo Scan & Serverless API Tab -->
+    <div id="tab-photoScan" class="tab-content">
         <div class="card">
-            <h2>Fast Scoresheet Photo Review & Scan</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Snap or upload a photo of your paper scoresheet. The app will instantly display it for side-by-side verification while you tap in your scores.</p>
+            <h2>Vercel Serverless Scoresheet Processing</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. The app will automatically compress it client-side and send it to your Vercel backend function (`/api/scan`).</p>
             
             <div class="photo-review-layout">
                 <div>
-                    <input type="file" id="scorePhotoInput" accept="image/*" capture="environment" onchange="handleFastPhotoUpload(event)">
+                    <input type="file" id="scorePhotoInput" accept="image/*" capture="environment" onchange="handleImageUpload(event)">
                     <div class="photo-preview-container" id="photoPreviewArea" style="margin-top:15px;">
                         <p style="color: var(--text-muted);">No photo uploaded yet.</p>
                     </div>
                 </div>
                 <div>
-                    <h3>Quick Score Verification</h3>
+                    <h3>Serverless Response Status</h3>
                     <div id="scanStatusBox" style="background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; min-height: 200px; font-size: 14px; color: var(--text-muted);">
-                        Upload a scoresheet photo to load it instantly for side-by-side score verification.
+                        Waiting for photo upload...
                     </div>
                 </div>
             </div>
@@ -401,7 +401,7 @@
     let totalQuestionsCount = 20;
 
     function switchTab(tabName) {
-        ['scorekeeper', 'aiScan', 'leaderboards'].forEach(t => {
+        ['scorekeeper', 'photoScan', 'leaderboards'].forEach(t => {
             let btn = document.getElementById('btn-' + t);
             let content = document.getElementById('tab-' + t);
             if (btn) btn.classList.remove('active');
@@ -599,19 +599,53 @@
         buildScoreSheet(); 
     }
 
-    function handleFastPhotoUpload(event) {
+    // Client-side image compression + Vercel Serverless API call
+    function handleImageUpload(event) {
         const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Scoresheet Reference:</strong></p><img src="${e.target.result}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
-                document.getElementById('scanStatusBox').innerHTML = `
-                    <p style="color: #166534; font-weight: bold; margin-bottom: 8px;">✓ Photo Loaded Successfully!</p>
-                    <p>Your scoresheet is now displayed on the left. You can easily switch back to the <strong>Score Sheet</strong> tab and tap in your tactile scoring buttons while looking at your reference photo.</p>
-                `;
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = async function() {
+                // Display local preview
+                document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Scoresheet:</strong></p><img src="${img.src}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
+                document.getElementById('scanStatusBox').innerText = "Compressing image and uploading to Vercel serverless function...";
+
+                // Canvas compression to stay under Vercel's 4.5MB limit
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1000;
+                let scaleSize = MAX_WIDTH / img.width;
+                if (scaleSize > 1) scaleSize = 1;
+                
+                canvas.width = img.width * scaleSize;
+                canvas.height = img.height * scaleSize;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                try {
+                    const response = await fetch('/api/scan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ imageBase64: compressedBase64 })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('scanStatusBox').innerHTML = `<span style="color: #166534; font-weight: bold;">✓ ${data.message}</span>`;
+                    } else {
+                        document.getElementById('scanStatusBox').innerText = "Error: " + (data.error || "Unknown error");
+                    }
+                } catch (err) {
+                    document.getElementById('scanStatusBox').innerText = "Upload failed: " + err.message;
+                }
             };
-            reader.readAsDataURL(file);
-        }
+        };
+        reader.readAsDataURL(file);
     }
 
     function clearAllData() {
