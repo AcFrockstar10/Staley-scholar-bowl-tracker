@@ -374,7 +374,7 @@
     <div id="tab-photoScan" class="tab-content">
         <div class="card">
             <h2>Vercel Serverless Scoresheet Processing</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. Extracted stats are verified against your school roster and can be saved to leaderboards.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. Extracted stats are verified against your school roster and can be saved to your choice of leaderboard.</p>
             
             <div class="photo-review-layout">
                 <div>
@@ -422,7 +422,7 @@
     const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
 
     let totalQuestionsCount = 20;
-    let lastScannedMatchData = null; // Stores verified scan results for quick saving
+    let lastScannedMatchData = null;
 
     function switchTab(tabName) {
         ['scorekeeper', 'photoScan', 'leaderboards'].forEach(t => {
@@ -655,7 +655,7 @@
                 bestMatch = rosterName;
             }
         });
-        return bestMatch; // Returns null if name differs by > 2 letters
+        return bestMatch; 
     }
 
     // Client-side compression + Vercel Serverless API call with verification
@@ -712,7 +712,6 @@
                             }
                         });
 
-                        // Store verified match for quick saving to leaderboard
                         lastScannedMatchData = {
                             name: data.data.matchName || "Scanned Match",
                             type: "real",
@@ -741,7 +740,14 @@
                                     ${playerRows.length > 0 ? playerRows : '<tr><td colspan="3" style="text-align:center;">No matching roster players found within threshold</td></tr>'}
                                 </tbody>
                             </table>
-                            <button class="primary" style="margin-top: 15px; width: 100%;" onclick="saveScannedMatchToLeaderboard()">Save Scanned Match to Leaderboard</button>
+                            <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+                                <label style="font-size: 13px; font-weight: bold;">Save to:</label>
+                                <select id="scanMatchTypeSelect" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                                    <option value="real">Real Matches Leaderboard</option>
+                                    <option value="practice">Practice Matches Leaderboard</option>
+                                </select>
+                            </div>
+                            <button class="primary" style="margin-top: 10px; width: 100%;" onclick="saveScannedMatchToLeaderboard()">Save Scanned Match to Leaderboard</button>
                         `;
                     } else {
                         document.getElementById('scanStatusBox').innerText = "Error: " + (data.error || "Unknown error");
@@ -760,14 +766,17 @@
             return;
         }
 
+        const selectedType = document.getElementById('scanMatchTypeSelect').value;
+        lastScannedMatchData.type = selectedType;
+
         let savedMatches = [];
         try {
             savedMatches = JSON.parse(localStorage.getItem('scholar_bowl_matches') || '[]');
         } catch(e) { savedMatches = []; }
 
-        savedMatches.push(lastScannedMatchData);
+        savedMatches.push(JSON.parse(JSON.stringify(lastScannedMatchData)));
         localStorage.setItem('scholar_bowl_matches', JSON.stringify(savedMatches));
-        alert(`Successfully saved "${lastScannedMatchData.name}" to the leaderboard!`);
+        alert(`Successfully saved "${lastScannedMatchData.name}" to the ${selectedType} leaderboard!`);
     }
 
     function clearAllData() {
