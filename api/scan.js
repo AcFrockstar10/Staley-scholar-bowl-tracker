@@ -38,6 +38,7 @@ export default async function handler(req, res) {
         });
 
         const result = await response.json();
+        console.log("Robofraw Raw Result:", JSON.stringify(result));
 
         let parsedData = {
             matchName: "Scanned Match",
@@ -47,8 +48,17 @@ export default async function handler(req, res) {
         };
 
         try {
-            let rawOutput = result[0]?.open_ai_output?.output || result[0]?.open_ai?.output;
-            
+            // Check all common response formats from Roboflow Workflows
+            let rawOutput = null;
+
+            if (Array.isArray(result)) {
+                rawOutput = result[0]?.open_ai_output?.output || result[0]?.open_ai?.output || result[0]?.output;
+            } else if (result.outputs) {
+                rawOutput = result.outputs[0]?.output || result.outputs[0]?.open_ai_output;
+            } else if (result.open_ai_output) {
+                rawOutput = result.open_ai_output.output;
+            }
+
             if (typeof rawOutput === 'string') {
                 const cleanJson = rawOutput.replace(/```json/g, '').replace(/```/g, '').trim();
                 parsedData = JSON.parse(cleanJson);
@@ -59,8 +69,8 @@ export default async function handler(req, res) {
             console.error("JSON parsing error:", e);
         }
 
-        // Safety check to ensure playerStats always maps correctly to frontend table
-        const normalizedStats = Array.isArray(parsedData.playerStats) ? parsedData.playerStats : (parsedData.players || []);
+        // Ensure playerStats is always present
+        const statsArray = parsedData.playerStats || parsedData.players || [];
 
         return res.status(200).json({ 
             success: true, 
@@ -69,7 +79,7 @@ export default async function handler(req, res) {
                 matchName: parsedData.matchName || "Scanned Match",
                 team1Score: parsedData.team1Score || 0,
                 team2Score: parsedData.team2Score || 0,
-                playerStats: normalizedStats
+                playerStats: statsArray
             }
         });
 
