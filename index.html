@@ -181,12 +181,12 @@
             text-align: center;
             font-size: 14px;
             background: white;
-            min-width: 800px;
+            min-width: 900px;
         }
 
         table.score-sheet th, table.score-sheet td {
             border: 1px solid #cbd5e1;
-            padding: 8px 10px;
+            padding: 8px 6px;
         }
 
         table.score-sheet th {
@@ -203,6 +203,46 @@
         table.score-sheet th.team-green-header {
             background: #22c55e;
             color: white;
+        }
+
+        /* Tactile Score Buttons */
+        .score-btn-group {
+            display: flex;
+            gap: 3px;
+            justify-content: center;
+        }
+
+        .score-pill {
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #f1f5f9;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .score-pill:hover {
+            background: #e2e8f0;
+        }
+
+        .score-pill.active-10 {
+            background: #22c55e;
+            color: white;
+            border-color: #16a34a;
+        }
+
+        .score-pill.active-15 {
+            background: #3b82f6;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .score-pill.active-x {
+            background: #ef4444;
+            color: white;
+            border-color: #dc2626;
         }
 
         .leaderboard-grid {
@@ -293,22 +333,22 @@
                 <table class="score-sheet">
                     <thead>
                         <tr>
-                            <th style="width: 4%;">Q#</th>
+                            <th>#</th>
                             <th class="team-red-header" colspan="5">Team 1 (School Roster)</th>
                             <th class="team-green-header" colspan="5">Team 2 (Opponent / Practice)</th>
                         </tr>
                         <tr>
-                            <th>#</th>
+                            <th>Q</th>
                             <th style="width: 15%;">Player</th>
-                            <th style="width: 5%;">Q</th>
-                            <th style="width: 5%;">B1</th>
-                            <th style="width: 5%;">B2</th>
-                            <th style="width: 5%;">B3</th>
+                            <th style="width: 12%;">Q</th>
+                            <th style="width: 12%;">B1</th>
+                            <th style="width: 12%;">B2</th>
+                            <th style="width: 12%;">B3</th>
                             <th style="width: 15%;">Player</th>
-                            <th style="width: 5%;">Q</th>
-                            <th style="width: 5%;">B1</th>
-                            <th style="width: 5%;">B2</th>
-                            <th style="width: 5%;">B3</th>
+                            <th style="width: 12%;">Q</th>
+                            <th style="width: 12%;">B1</th>
+                            <th style="width: 12%;">B2</th>
+                            <th style="width: 12%;">B3</th>
                         </tr>
                     </thead>
                     <tbody id="scoreSheetBody"></tbody>
@@ -412,208 +452,4 @@
         schoolRoster.forEach(p => { t1Options += `<option value="${p}">${p}</option>`; });
 
         for (let i = 0; i < totalQuestionsCount; i++) {
-            let rowData = savedState[i] || { t1p: 'N/A', t1q: '', t1b1: '', t1b2: '', t1b3: '', t2p: 'N/A', t2q: '', t2b1: '', t2b2: '', t2b3: '' };
-            
-            htmlRows += `
-                <tr>
-                    <td style="font-weight:bold; background:#f1f5f9;">${i + 1}</td>
-                    <td><select class="t1-player" data-row="${i}" onchange="saveCurrentSheetState()">${t1Options}</select></td>
-                    <td><input type="text" class="t1-q" value="${rowData.t1q}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
-                    <td><input type="text" class="t1-b1" value="${rowData.t1b1}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
-                    <td><input type="text" class="t1-b2" value="${rowData.t1b2}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
-                    <td><input type="text" class="t1-b3" value="${rowData.t1b3}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
-                    <td><select class="t2-player" data-row="${i}" onchange="saveCurrentSheetState()">${t2Options}</select></td>
-                    <td><input type="text" class="t2-q" value="${rowData.t2q}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
-                    <td><input type="text" class="t2-b1" value="${rowData.t2b1}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
-                    <td><input type="text" class="t2-b2" value="${rowData.t2b2}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
-                    <td><input type="text" class="t2-b3" value="${rowData.t2b3}" style="width:100%; text-align:center;" placeholder="10" oninput="saveCurrentSheetState()"></td>
-                </tr>
-            `;
-        }
-        tbody.innerHTML = htmlRows;
-
-        const rows = tbody.querySelectorAll('tr');
-        rows.forEach((tr, i) => {
-            if (savedState[i]) {
-                tr.querySelector('.t1-player').value = savedState[i].t1p;
-                tr.querySelector('.t2-player').value = savedState[i].t2p;
-            }
-        });
-
-        let savedName = localStorage.getItem('scholar_bowl_match_name');
-        if(savedName) document.getElementById('matchName').value = savedName;
-
-        let savedType = localStorage.getItem('scholar_bowl_match_type');
-        if(savedType) document.getElementById('matchType').value = savedType;
-        
-        let savedPhoto = localStorage.getItem('scholar_bowl_photo');
-        if(savedPhoto) {
-            document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Saved Photo Review:</strong></p><img src="${savedPhoto}" alt="Score Sheet Photo">`;
-        }
-
-        calculateLiveScores();
-    }
-
-    function addOvertimeRow() {
-        totalQuestionsCount++;
-        localStorage.setItem('scholar_bowl_row_count', totalQuestionsCount);
-        saveCurrentSheetState();
-        buildScoreSheet();
-    }
-
-    function calculateLiveScores() {
-        const rows = document.querySelectorAll('#scoreSheetBody tr');
-        let t1Score = 0;
-        let t2Score = 0;
-
-        rows.forEach(tr => {
-            // Team 1 values
-            ['t1-q', 't1-b1', 't1-b2', 't1-b3'].forEach(cls => {
-                let val = parseInt(tr.querySelector(`.${cls}`).value) || 0;
-                if (val > 0) t1Score += val;
-            });
-            // Team 2 values
-            ['t2-q', 't2-b1', 't2-b2', 't2-b3'].forEach(cls => {
-                let val = parseInt(tr.querySelector(`.${cls}`).value) || 0;
-                if (val > 0) t2Score += val;
-            });
-        });
-
-        document.getElementById('team1TotalScore').innerText = t1Score;
-        document.getElementById('team2TotalScore').innerText = t2Score;
-    }
-
-    function saveCurrentSheetState() {
-        const rows = document.querySelectorAll('#scoreSheetBody tr');
-        let state = [];
-        rows.forEach(tr => {
-            state.push({
-                t1p: tr.querySelector('.t1-player').value,
-                t1q: tr.querySelector('.t1-q').value,
-                t1b1: tr.querySelector('.t1-b1').value,
-                t1b2: tr.querySelector('.t1-b2').value,
-                t1b3: tr.querySelector('.t1-b3').value,
-                t2p: tr.querySelector('.t2-player').value,
-                t2q: tr.querySelector('.t2-q').value,
-                t2b1: tr.querySelector('.t2-b1').value,
-                t2b2: tr.querySelector('.t2-b2').value,
-                t2b3: tr.querySelector('.t2-b3').value
-            });
-        });
-        localStorage.setItem('scholar_bowl_current_sheet', JSON.stringify(state));
-        localStorage.setItem('scholar_bowl_match_name', document.getElementById('matchName').value);
-        localStorage.setItem('scholar_bowl_match_type', document.getElementById('matchType').value);
-        calculateLiveScores();
-    }
-
-    function updateScorecard() { 
-        saveCurrentSheetState();
-        buildScoreSheet(); 
-    }
-
-    function previewScorePhoto(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64Image = e.target.result;
-                localStorage.setItem('scholar_bowl_photo', base64Image);
-                document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Photo Preview:</strong></p><img src="${base64Image}" alt="Score Sheet Photo">`;
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function clearPhoto() {
-        localStorage.removeItem('scholar_bowl_photo');
-        document.getElementById('scorePhotoInput').value = '';
-        document.getElementById('photoPreviewArea').innerHTML = `<p style="color: var(--text-muted);">No photo uploaded yet. Tap above to take a photo or select an image file.</p>`;
-    }
-
-    function clearAllData() {
-        if(confirm("Are you sure? This will wipe out the current sheet, photo, saved match history, and reset leaderboards.")) {
-            localStorage.clear();
-            savedMatches = [];
-            totalQuestionsCount = 20;
-            buildScoreSheet();
-            clearPhoto();
-            alert("All history and leaderboards have been completely reset.");
-        }
-    }
-
-    function saveMatchData() {
-        const matchName = document.getElementById('matchName').value || "Unnamed Match";
-        const matchType = document.getElementById('matchType').value;
-        const rows = document.querySelectorAll('#scoreSheetBody tr');
-        let matchRecords = [];
-
-        rows.forEach(tr => {
-            const t1Player = tr.querySelector('.t1-player').value;
-            const t1Q = tr.querySelector('.t1-q').value.trim();
-            if (t1Player !== 'N/A' && (t1Q === '10' || t1Q === '15')) {
-                matchRecords.push({ player: t1Player, qCorrect: 1, points: parseInt(t1Q) });
-            }
-
-            const t2Player = tr.querySelector('.t2-player').value;
-            const t2Q = tr.querySelector('.t2-q').value.trim();
-            if (matchType === 'practice' && t2Player !== 'N/A' && (t2Q === '10' || t2Q === '15')) {
-                matchRecords.push({ player: t2Player, qCorrect: 1, points: parseInt(t2Q) });
-            }
-        });
-
-        savedMatches.push({ name: matchName, type: matchType, records: matchRecords });
-        localStorage.setItem('scholar_bowl_matches', JSON.stringify(savedMatches));
-        alert(`Match "${matchName}" successfully saved to leaderboard!`);
-        localStorage.removeItem('scholar_bowl_current_sheet');
-        localStorage.removeItem('scholar_bowl_photo');
-        localStorage.removeItem('scholar_bowl_row_count');
-        totalQuestionsCount = 20;
-        clearPhoto();
-        buildScoreSheet();
-    }
-
-    function renderLeaderboards() {
-        const realTableBody = document.querySelector('#realLbTable tbody');
-        const practiceTableBody = document.querySelector('#practiceLbTable tbody');
-        realTableBody.innerHTML = '';
-        practiceTableBody.innerHTML = '';
-
-        let realStats = {};
-        let practiceStats = {};
-        schoolRoster.forEach(p => {
-            realStats[p] = { q: 0, points: 0 };
-            practiceStats[p] = { q: 0, points: 0 };
-        });
-
-        savedMatches.forEach(m => {
-            m.records.forEach(r => {
-                if (m.type === 'real' && realStats[r.player]) {
-                    realStats[r.player].q += r.qCorrect;
-                    realStats[r.player].points += r.points;
-                } else if (m.type === 'practice' && practiceStats[r.player]) {
-                    practiceStats[r.player].q += r.qCorrect;
-                    practiceStats[r.player].points += r.points;
-                }
-            });
-        });
-
-        let realArr = Object.keys(realStats).map(p => ({ player: p, ...realStats[p] })).sort((a, b) => b.points - a.points);
-        realArr.forEach((item, index) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
-            realTableBody.appendChild(tr);
-        });
-
-        let practiceArr = Object.keys(practiceStats).map(p => ({ player: p, ...practiceStats[p] })).sort((a, b) => b.points - a.points);
-        practiceArr.forEach((item, index) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
-            practiceTableBody.appendChild(tr);
-        });
-    }
-
-    window.onload = function() { buildScoreSheet(); };
-</script>
-
-</body>
-</html>
+            let rowData = savedState[i] || { t1p: 'N/A', t1q: '', t1b1: '', t1b2: '', t1b3: '', t
