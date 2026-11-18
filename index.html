@@ -501,9 +501,19 @@
                 </div>
             </div>
 
-            <!-- Player Analytics Breakdown -->
+            <!-- Player Analytics Breakdown with Toggle -->
             <div style="margin-top: 40px;">
-                <h3>Player Efficiency & Analytics</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                    <h3>Player Efficiency & Analytics</h3>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-size: 13px; font-weight: bold;">View Category:</label>
+                        <select id="analyticsFilter" onchange="renderLeaderboards()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                            <option value="all">All Matches (Combined)</option>
+                            <option value="real">Real Matches Only</option>
+                            <option value="practice">Practice Matches Only</option>
+                        </select>
+                    </div>
+                </div>
                 <table class="lb-table" id="analyticsTable">
                     <thead>
                         <tr>
@@ -538,14 +548,12 @@
 </div>
 
 <script>
-    // Dynamic Roster loaded from localStorage or default
     let schoolRoster = JSON.parse(localStorage.getItem('scholar_bowl_roster')) || ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic"];
     const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
 
     let totalQuestionsCount = 20;
     let lastScannedMatchData = null;
 
-    // Web Audio API Click Sound Generator
     function playClickSound() {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -599,7 +607,6 @@
         if (tabName === 'leaderboards') renderLeaderboards();
     }
 
-    // --- Roster Modal Functions ---
     function openRosterModal() {
         playClickSound();
         renderRosterTags();
@@ -1031,14 +1038,20 @@
             savedMatches = JSON.parse(localStorage.getItem('scholar_bowl_matches') || '[]');
         } catch(e) { savedMatches = []; }
 
+        const filterVal = document.getElementById('analyticsFilter')?.value || 'all';
+
         let realStats = {};
         let practiceStats = {};
+        let analyticsStats = {};
         let matchCounts = {};
-        
+        let analyticsMatchCounts = {};
+
         schoolRoster.forEach(p => {
             realStats[p] = { q: 0, points: 0 };
             practiceStats[p] = { q: 0, points: 0 };
+            analyticsStats[p] = { q: 0, points: 0 };
             matchCounts[p] = 0;
+            analyticsMatchCounts[p] = 0;
         });
 
         savedMatches.forEach(m => {
@@ -1052,9 +1065,29 @@
                     practiceStats[r.player].q += r.qCorrect;
                     practiceStats[r.player].points += r.points;
                 }
+
+                // Analytics filter logic
+                if (filterVal === 'all') {
+                    if (analyticsStats[r.player]) {
+                        analyticsStats[r.player].q += r.qCorrect;
+                        analyticsStats[r.player].points += r.points;
+                    }
+                } else if (m.type === filterVal) {
+                    if (analyticsStats[r.player]) {
+                        analyticsStats[r.player].q += r.qCorrect;
+                        analyticsStats[r.player].points += r.points;
+                    }
+                }
             });
+
             playersInMatch.forEach(p => {
-                if (matchCounts[p] !== undefined) matchCounts[p]++;
+                if (m.type === 'real' && matchCounts[p] !== undefined) matchCounts[p]++;
+                
+                if (filterVal === 'all') {
+                    if (analyticsMatchCounts[p] !== undefined) analyticsMatchCounts[p]++;
+                } else if (m.type === filterVal) {
+                    if (analyticsMatchCounts[p] !== undefined) analyticsMatchCounts[p]++;
+                }
             });
         });
 
@@ -1072,15 +1105,14 @@
             practiceTableBody.appendChild(tr);
         });
 
-        // Render Analytics Breakdown
+        // Render Analytics Breakdown based on selected dropdown filter
         schoolRoster.forEach(p => {
-            let totalQ = (realStats[p]?.q || 0) + (practiceStats[p]?.q || 0);
-            let totalPts = (realStats[p]?.points || 0) + (practiceStats[p]?.points || 0);
-            let matches = matchCounts[p] || 1;
-            let avgPts = (totalPts / matches).toFixed(1);
+            let stats = analyticsStats[p] || { q: 0, points: 0 };
+            let matches = analyticsMatchCounts[p] || 1;
+            let avgPts = (stats.points / matches).toFixed(1);
 
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${p}</td><td>${totalQ}</td><td>${totalPts}</td><td>${avgPts} pts</td>`;
+            tr.innerHTML = `<td>${p}</td><td>${stats.q}</td><td>${stats.points}</td><td>${avgPts} pts</td>`;
             analyticsTableBody.appendChild(tr);
         });
     }
