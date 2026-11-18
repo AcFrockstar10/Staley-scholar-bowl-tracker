@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scholar Bowl Tossup Tracker</title>
+    <style>
+        :root {
+            --primary: #4c5c92;
+            --primary-dark: #374370;
+            --bg-color: #f8f9fc;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 24px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: #edf2f7;
+            color: var(--text-main);
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .controls-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        select, input, button {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        button.primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .score-table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        table.score-sheet {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 14px;
+            background: white;
+        }
+
+        table.score-sheet th, table.score-sheet td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 10px;
+        }
+
+        table.score-sheet th {
+            background: #e2e8f0;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        table.score-sheet th.team-red-header {
+            background: #ef4444;
+            color: white;
+        }
+
+        table.score-sheet th.team-green-header {
+            background: #22c55e;
+            color: white;
+        }
+
+        .leaderboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media(max-width: 900px) {
+            .leaderboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .lb-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .lb-table th, .lb-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .lb-table th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Scholar Bowl Tossup Tracker</h1>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('scorekeeper')">Score Sheet (20 Q)</button>
+            <button class="tab-btn" onclick="switchTab('leaderboards')">Leaderboards</button>
+        </div>
+    </header>
+
+    <!-- Scorekeeper Tab -->
+    <div id="scorekeeper" class="tab-content active">
+        <div class="card">
+            <div class="controls-bar">
+                <label><strong>Match Type:</strong></label>
+                <select id="matchType" onchange="updateScorecard()">
+                    <option value="real">Real Match</option>
+                    <option value="practice">Practice Match</option>
+                </select>
+
+                <label><strong>Match Name:</strong></label>
+                <input type="text" id="matchName" value="Match 1 - 11/18/26" placeholder="e.g., Match vs West High">
+
+                <button class="primary" onclick="saveMatchData()">Save Match to Leaderboard</button>
+                <button onclick="resetScoreSheet()">Clear Sheet</button>
+            </div>
+
+            <div class="score-table-wrapper">
+                <table class="score-sheet" id="scoreSheetTable">
+                    <thead>
+                        <tr>
+                            <th class="team-red-header" colspan="5">Team 1 (School Roster)</th>
+                            <th class="team-green-header" colspan="5">Team 2 (Opponent / Practice)</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 16%;">Player</th>
+                            <th style="width: 5%;">Q</th>
+                            <th style="width: 5%;">B1</th>
+                            <th style="width: 5%;">B2</th>
+                            <th style="width: 5%;">B3</th>
+                            <th style="width: 16%;">Player</th>
+                            <th style="width: 5%;">Q</th>
+                            <th style="width: 5%;">B1</th>
+                            <th style="width: 5%;">B2</th>
+                            <th style="width: 5%;">B3</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoreSheetBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboards Tab -->
+    <div id="leaderboards" class="tab-content">
+        <div class="card">
+            <h2>Player Leaderboards (Tossups Correct & Points)</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Tracks cumulative stats for school roster players across saved matches (10 pts per Tossup Correct).</p>
+
+            <div class="leaderboard-grid">
+                <div>
+                    <h3>Real Matches Leaderboard</h3>
+                    <table class="lb-table" id="realLbTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Tossups (Q)</th>
+                                <th>Total Points</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div>
+                    <h3>Practice Matches Leaderboard</h3>
+                    <table class="lb-table" id="practiceLbTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Tossups (Q)</th>
+                                <th>Total Points</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const schoolRoster = ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic"];
+    const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
+
+    let savedMatches = [];
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        if(tabId === 'scorekeeper') {
+            document.querySelector('.nav-tabs button:nth-child(1)').classList.add('active');
+            document.getElementById('scorekeeper').classList.add('active');
+        } else {
+            document.querySelector('.nav-tabs button:nth-child(2)').classList.add('active');
+            document.getElementById('leaderboards').classList.add('active');
+            renderLeaderboards();
+        }
+    }
+
+    function buildScoreSheet() {
+        const tbody = document.getElementById('scoreSheetBody');
+        tbody.innerHTML = '';
+        const matchType = document.getElementById('matchType').value;
+
+        for (let i = 1; i <= 20; i++) {
+            const tr = document.createElement('tr');
+
+            let t1Select = `<select class="t1-player" data-row="${i}"><option value="N/A">N/A</option>`;
+            schoolRoster.forEach(p => { t1Select += `<option value="${p}">${p}</option>`; });
+            t1Select += `</select>`;
+
+            let t2Select = `<select class="t2-player" data-row="${i}"><option value="N/A">N/A</option>`;
+            let t2List = (matchType === 'practice') ? schoolRoster : opponentRealPlayers;
+            t2List.forEach(p => { t2Select += `<option value="${p}">${p}</option>`; });
+            t2Select += `</select>`;
+
+            tr.innerHTML = `
+                <td>${t1Select}</td>
+                <td><input type="text" class="t1-q" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                <td><input type="text" class="t1-b1" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                <td><input type="text" class="t1-b2" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                <td><input type="text" class="t1-b3" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                <td>${t2Select}</td>
+                <td><input type="text" class="t2-q" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                <td><input type="text" class="t2-b1" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                <td><input type="text" class="t2-b2" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                <td><input type="text" class="t2-b3" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+    function updateScorecard() { buildScoreSheet(); }
+    function resetScoreSheet() { buildScoreSheet(); }
+
+    function saveMatchData() {
+        const matchName = document.getElementById('matchName').value || "Unnamed Match";
+        const matchType = document.getElementById('matchType').value;
+        const rows = document.querySelectorAll('#scoreSheetBody tr');
+        let matchRecords = [];
+
+        rows.forEach(tr => {
+            const t1Player = tr.querySelector('.t1-player').value;
+            const t1Q = tr.querySelector('.t1-q').value.trim();
+            if (t1Player !== 'N/A' && (t1Q === '10' || t1Q === '15')) {
+                matchRecords.push({ player: t1Player, qCorrect: 1, points: parseInt(t1Q) });
+            }
+
+            const t2Player = tr.querySelector('.t2-player').value;
+            const t2Q = tr.querySelector('.t2-q').value.trim();
+            if (matchType === 'practice' && t2Player !== 'N/A' && (t2Q === '10' || t2Q === '15')) {
+                matchRecords.push({ player: t2Player, qCorrect: 1, points: parseInt(t2Q) });
+            }
+        });
+
+        savedMatches.push({ name: matchName, type: matchType, records: matchRecords });
+        alert(`Match "${matchName}" successfully saved!`);
+    }
+
+    function renderLeaderboards() {
+        const realTableBody = document.querySelector('#realLbTable tbody');
+        const practiceTableBody = document.querySelector('#practiceLbTable tbody');
+        realTableBody.innerHTML = '';
+        practiceTableBody.innerHTML = '';
+
+        let realStats = {};
+        let practiceStats = {};
+        schoolRoster.forEach(p => {
+            realStats[p] = { q: 0, points: 0 };
+            practiceStats[p] = { q: 0, points: 0 };
+        });
+
+        savedMatches.forEach(m => {
+            m.records.forEach(r => {
+                if (m.type === 'real' && realStats[r.player]) {
+                    realStats[r.player].q += r.qCorrect;
+                    realStats[r.player].points += r.points;
+                } else if (m.type === 'practice' && practiceStats[r.player]) {
+                    practiceStats[r.player].q += r.qCorrect;
+                    practiceStats[r.player].points += r.points;
+                }
+            });
+        });
+
+        let realArr = Object.keys(realStats).map(p => ({ player: p, ...realStats[p] })).sort((a, b) => b.points - a.points);
+        realArr.forEach((item, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
+            realTableBody.appendChild(tr);
+        });
+
+        let practiceArr = Object.keys(practiceStats).map(p => ({ player: p, ...practiceStats[p] })).sort((a, b) => b.points - a.points);
+        practiceArr.forEach((item, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
+            practiceTableBody.appendChild(tr);
+        });
+    }
+
+    window.onload = function() { buildScoreSheet(); };
+</script>
+
+</body>
+</html>
