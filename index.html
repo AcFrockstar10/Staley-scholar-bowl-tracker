@@ -223,10 +223,6 @@
             transition: all 0.1s;
         }
 
-        .score-pill:hover {
-            background: #e2e8f0;
-        }
-
         .score-pill.active-10 {
             background: #22c55e;
             color: white;
@@ -438,15 +434,15 @@
                 <tr>
                     <td style="font-weight:bold; background:#f1f5f9;">${i + 1}</td>
                     <td><select class="t1-player" data-row="${i}" onchange="saveCurrentSheetState()">${t1Options}</select></td>
-                    <td>${createScoreButtons('t1-q', rowData.t1q)}</td>
-                    <td>${createScoreButtons('t1-b1', rowData.t1b1)}</td>
-                    <td>${createScoreButtons('t1-b2', rowData.t1b2)}</td>
-                    <td>${createScoreButtons('t1-b3', rowData.t1b3)}</td>
+                    <td>${createScoreButtons('t1-q', rowData.t1q, true)}</td>
+                    <td>${createScoreButtons('t1-b1', rowData.t1b1, false)}</td>
+                    <td>${createScoreButtons('t1-b2', rowData.t1b2, false)}</td>
+                    <td>${createScoreButtons('t1-b3', rowData.t1b3, false)}</td>
                     <td><select class="t2-player" data-row="${i}" onchange="saveCurrentSheetState()">${t2Options}</select></td>
-                    <td>${createScoreButtons('t2-q', rowData.t2q)}</td>
-                    <td>${createScoreButtons('t2-b1', rowData.t2b1)}</td>
-                    <td>${createScoreButtons('t2-b2', rowData.t2b2)}</td>
-                    <td>${createScoreButtons('t2-b3', rowData.t2b3)}</td>
+                    <td>${createScoreButtons('t2-q', rowData.t2q, true)}</td>
+                    <td>${createScoreButtons('t2-b1', rowData.t2b1, false)}</td>
+                    <td>${createScoreButtons('t2-b2', rowData.t2b2, false)}</td>
+                    <td>${createScoreButtons('t2-b3', rowData.t2b3, false)}</td>
                 </tr>
             `;
         }
@@ -472,15 +468,17 @@
         calculateLiveScores();
     }
 
-    function createScoreButtons(className, currentVal) {
+    function createScoreButtons(className, currentVal, allow15) {
         let active10 = (currentVal === '10') ? 'active-10' : '';
         let active15 = (currentVal === '15') ? 'active-15' : '';
         let activeX = (currentVal === 'X') ? 'active-x' : '';
 
+        let btn15Html = allow15 ? `<button type="button" class="score-pill ${active15}" onclick="setScoreValue(this, '15', '${className}')">15</button>` : '';
+
         return `
             <div class="score-btn-group">
                 <button type="button" class="score-pill ${active10}" onclick="setScoreValue(this, '10', '${className}')">10</button>
-                <button type="button" class="score-pill ${active15}" onclick="setScoreValue(this, '15', '${className}')">15</button>
+                ${btn15Html}
                 <button type="button" class="score-pill ${activeX}" onclick="setScoreValue(this, 'X', '${className}')">X</button>
                 <input type="hidden" class="score-val-input ${className}" value="${currentVal || ''}">
             </div>
