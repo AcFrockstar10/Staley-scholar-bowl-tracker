@@ -217,7 +217,7 @@
                 <input type="text" id="matchName" value="Match 1 - 11/18/26" placeholder="e.g., Match vs West High" oninput="saveCurrentSheetState()">
 
                 <button class="primary" onclick="saveMatchData()">Save Match to Leaderboard</button>
-                <button class="danger" onclick="clearAllData()">Clear All Points</button>
+                <button class="danger" onclick="clearAllData()">Clear All Data & History</button>
             </div>
 
             <div class="score-table-wrapper">
@@ -339,7 +339,6 @@
         }
         tbody.innerHTML = htmlRows;
 
-        // Restore selected dropdown values
         const rows = tbody.querySelectorAll('tr');
         rows.forEach((tr, i) => {
             if (savedState[i]) {
@@ -383,82 +382,6 @@
     }
 
     function clearAllData() {
-        if(confirm("Are you sure you want to clear all inputs on this sheet?")) {
+        if(confirm("Are you sure? This will wipe out the current sheet, all saved match history, and reset all leaderboards.")) {
             localStorage.removeItem('scholar_bowl_current_sheet');
-            localStorage.removeItem('scholar_bowl_match_name');
-            buildScoreSheet();
-        }
-    }
-
-    function saveMatchData() {
-        const matchName = document.getElementById('matchName').value || "Unnamed Match";
-        const matchType = document.getElementById('matchType').value;
-        const rows = document.querySelectorAll('#scoreSheetBody tr');
-        let matchRecords = [];
-
-        rows.forEach(tr => {
-            const t1Player = tr.querySelector('.t1-player').value;
-            const t1Q = tr.querySelector('.t1-q').value.trim();
-            if (t1Player !== 'N/A' && (t1Q === '10' || t1Q === '15')) {
-                matchRecords.push({ player: t1Player, qCorrect: 1, points: parseInt(t1Q) });
-            }
-
-            const t2Player = tr.querySelector('.t2-player').value;
-            const t2Q = tr.querySelector('.t2-q').value.trim();
-            if (matchType === 'practice' && t2Player !== 'N/A' && (t2Q === '10' || t2Q === '15')) {
-                matchRecords.push({ player: t2Player, qCorrect: 1, points: parseInt(t2Q) });
-            }
-        });
-
-        savedMatches.push({ name: matchName, type: matchType, records: matchRecords });
-        localStorage.setItem('scholar_bowl_matches', JSON.stringify(savedMatches));
-        alert(`Match "${matchName}" successfully saved to leaderboard!`);
-        localStorage.removeItem('scholar_bowl_current_sheet');
-        buildScoreSheet();
-    }
-
-    function renderLeaderboards() {
-        const realTableBody = document.querySelector('#realLbTable tbody');
-        const practiceTableBody = document.querySelector('#practiceLbTable tbody');
-        realTableBody.innerHTML = '';
-        practiceTableBody.innerHTML = '';
-
-        let realStats = {};
-        let practiceStats = {};
-        schoolRoster.forEach(p => {
-            realStats[p] = { q: 0, points: 0 };
-            practiceStats[p] = { q: 0, points: 0 };
-        });
-
-        savedMatches.forEach(m => {
-            m.records.forEach(r => {
-                if (m.type === 'real' && realStats[r.player]) {
-                    realStats[r.player].q += r.qCorrect;
-                    realStats[r.player].points += r.points;
-                } else if (m.type === 'practice' && practiceStats[r.player]) {
-                    practiceStats[r.player].q += r.qCorrect;
-                    practiceStats[r.player].points += r.points;
-                }
-            });
-        });
-
-        let realArr = Object.keys(realStats).map(p => ({ player: p, ...realStats[p] })).sort((a, b) => b.points - a.points);
-        realArr.forEach((item, index) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
-            realTableBody.appendChild(tr);
-        });
-
-        let practiceArr = Object.keys(practiceStats).map(p => ({ player: p, ...practiceStats[p] })).sort((a, b) => b.points - a.points);
-        practiceArr.forEach((item, index) => {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
-            practiceTableBody.appendChild(tr);
-        });
-    }
-
-    window.onload = function() { buildScoreSheet(); };
-</script>
-
-</body>
-</html>
+            localStorage.removeItem('scholar_bowl
