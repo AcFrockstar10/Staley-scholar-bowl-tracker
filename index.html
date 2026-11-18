@@ -181,7 +181,7 @@
             text-align: center;
             font-size: 14px;
             background: white;
-            min-width: 900px;
+            min-width: 950px;
         }
 
         table.score-sheet th, table.score-sheet td {
@@ -208,38 +208,25 @@
         /* Tactile Score Buttons */
         .score-btn-group {
             display: flex;
-            gap: 3px;
+            gap: 2px;
             justify-content: center;
         }
 
         .score-pill {
-            padding: 6px 10px;
-            font-size: 12px;
+            padding: 5px 8px;
+            font-size: 11px;
             font-weight: 700;
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 5px;
             background: #f1f5f9;
             cursor: pointer;
             transition: all 0.1s;
         }
 
-        .score-pill.active-10 {
-            background: #22c55e;
-            color: white;
-            border-color: #16a34a;
-        }
-
-        .score-pill.active-15 {
-            background: #3b82f6;
-            color: white;
-            border-color: #2563eb;
-        }
-
-        .score-pill.active-x {
-            background: #ef4444;
-            color: white;
-            border-color: #dc2626;
-        }
+        .score-pill.active-15 { background: #3b82f6; color: white; border-color: #2563eb; }
+        .score-pill.active-10 { background: #22c55e; color: white; border-color: #16a34a; }
+        .score-pill.active-neg { background: #f97316; color: white; border-color: #c2410c; }
+        .score-pill.active-x { background: #ef4444; color: white; border-color: #dc2626; }
 
         .leaderboard-grid {
             display: grid;
@@ -283,10 +270,10 @@
 
 <div class="container">
     <header>
-        <h1>Scholar Bowl Tossup Tracker</h1>
+        <h1>Scholar Bowl Tossup Tracker (NAQT Style)</h1>
         <div class="nav-tabs">
             <button class="tab-btn active" id="btn-scorekeeper" onclick="switchTab('scorekeeper')">Score Sheet</button>
-            <button class="tab-btn" id="btn-aiScan" onclick="switchTab('aiScan')">AI Photo Scan</button>
+            <button class="tab-btn" id="btn-aiScan" onclick="switchTab('aiScan')">AI Photo Scan & Review</button>
             <button class="tab-btn" id="btn-leaderboards" onclick="switchTab('leaderboards')">Leaderboards</button>
         </div>
     </header>
@@ -303,7 +290,7 @@
                     </select>
 
                     <label><strong>Match Name:</strong></label>
-                    <input type="text" id="matchName" value="Match 1" oninput="saveCurrentSheetState()">
+                    <input type="text" id="matchName" value="Round 1" oninput="saveCurrentSheetState()">
                 </div>
 
                 <div class="controls-group">
@@ -313,7 +300,7 @@
                 </div>
             </div>
 
-            <!-- Live Match Score Banner -->
+            <!-- Live Match Score Banner (Cannot go below 0) -->
             <div class="live-score-banner">
                 <div>Team 1 Score: <span id="team1TotalScore">0</span></div>
                 <div>Team 2 Score: <span id="team2TotalScore">0</span></div>
@@ -330,15 +317,15 @@
                         <tr>
                             <th>#</th>
                             <th style="width: 15%;">Player</th>
-                            <th style="width: 12%;">Q</th>
-                            <th style="width: 12%;">B1</th>
-                            <th style="width: 12%;">B2</th>
-                            <th style="width: 12%;">B3</th>
+                            <th style="width: 15%;">Q (15/10/-5)</th>
+                            <th style="width: 10%;">B1</th>
+                            <th style="width: 10%;">B2</th>
+                            <th style="width: 10%;">B3</th>
                             <th style="width: 15%;">Player</th>
-                            <th style="width: 12%;">Q</th>
-                            <th style="width: 12%;">B1</th>
-                            <th style="width: 12%;">B2</th>
-                            <th style="width: 12%;">B3</th>
+                            <th style="width: 15%;">Q (15/10/-5)</th>
+                            <th style="width: 10%;">B1</th>
+                            <th style="width: 10%;">B2</th>
+                            <th style="width: 10%;">B3</th>
                         </tr>
                     </thead>
                     <tbody id="scoreSheetBody"></tbody>
@@ -350,8 +337,8 @@
     <!-- AI Scan Tab -->
     <div id="tab-aiScan" class="tab-content">
         <div class="card">
-            <h2>AI Photo Scan & Review</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper score sheet.</p>
+            <h2>AI Photo Scan & NAQT Sheet Review</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your filled NAQT paper scoresheet. The system will review your notes and verify scoring layout.</p>
             <input type="file" id="scorePhotoInput" accept="image/*" capture="environment" onchange="handlePhotoUpload(event)">
             <div class="photo-preview-container" id="photoPreviewArea" style="margin-top:15px;">
                 <p style="color: var(--text-muted);">No photo uploaded yet.</p>
@@ -448,7 +435,6 @@
         }
         tbody.innerHTML = htmlRows;
 
-        // Restore values safely
         const rows = tbody.querySelectorAll('tr');
         rows.forEach((tr, i) => {
             if (savedState && savedState[i]) {
@@ -468,21 +454,31 @@
         calculateLiveScores();
     }
 
-    function createScoreButtons(className, currentVal, allow15) {
-        let active10 = (currentVal === '10') ? 'active-10' : '';
+    function createScoreButtons(className, currentVal, isTossup) {
         let active15 = (currentVal === '15') ? 'active-15' : '';
+        let active10 = (currentVal === '10') ? 'active-10' : '';
+        let activeNeg = (currentVal === '-5') ? 'active-neg' : '';
         let activeX = (currentVal === 'X') ? 'active-x' : '';
 
-        let btn15Html = allow15 ? `<button type="button" class="score-pill ${active15}" onclick="setScoreValue(this, '15', '${className}')">15</button>` : '';
-
-        return `
-            <div class="score-btn-group">
-                <button type="button" class="score-pill ${active10}" onclick="setScoreValue(this, '10', '${className}')">10</button>
-                ${btn15Html}
-                <button type="button" class="score-pill ${activeX}" onclick="setScoreValue(this, 'X', '${className}')">X</button>
-                <input type="hidden" class="score-val-input ${className}" value="${currentVal || ''}">
-            </div>
-        `;
+        if (isTossup) {
+            return `
+                <div class="score-btn-group">
+                    <button type="button" class="score-pill ${active15}" onclick="setScoreValue(this, '15', '${className}')">15</button>
+                    <button type="button" class="score-pill ${active10}" onclick="setScoreValue(this, '10', '${className}')">10</button>
+                    <button type="button" class="score-pill ${activeNeg}" onclick="setScoreValue(this, '-5', '${className}')">-5</button>
+                    <input type="hidden" class="score-val-input ${className}" value="${currentVal || ''}">
+                </div>
+            `;
+        } else {
+            // Bonuses only get 10 and X (-5 and 15 removed)
+            return `
+                <div class="score-btn-group">
+                    <button type="button" class="score-pill ${active10}" onclick="setScoreValue(this, '10', '${className}')">10</button>
+                    <button type="button" class="score-pill ${activeX}" onclick="setScoreValue(this, 'X', '${className}')">X</button>
+                    <input type="hidden" class="score-val-input ${className}" value="${currentVal || ''}">
+                </div>
+            `;
+        }
     }
 
     function setScoreValue(btn, val, className) {
@@ -495,8 +491,9 @@
         } else {
             input.value = val;
             group.querySelectorAll('.score-pill').forEach(p => p.className = 'score-pill');
-            if (val === '10') btn.className = 'score-pill active-10';
             if (val === '15') btn.className = 'score-pill active-15';
+            if (val === '10') btn.className = 'score-pill active-10';
+            if (val === '-5') btn.className = 'score-pill active-neg';
             if (val === 'X') btn.className = 'score-pill active-x';
         }
         
@@ -517,17 +514,23 @@
         rows.forEach(tr => {
             ['t1-q', 't1-b1', 't1-b2', 't1-b3'].forEach(cls => {
                 let input = tr.querySelector(`.${cls}`);
-                if (input && (input.value === '10' || input.value === '15')) {
-                    t1Score += parseInt(input.value);
+                if (input && input.value) {
+                    let pts = parseInt(input.value);
+                    if (!isNaN(pts)) t1Score += pts;
                 }
             });
             ['t2-q', 't2-b1', 't2-b2', 't2-b3'].forEach(cls => {
                 let input = tr.querySelector(`.${cls}`);
-                if (input && (input.value === '10' || input.value === '15')) {
-                    t2Score += parseInt(input.value);
+                if (input && input.value) {
+                    let pts = parseInt(input.value);
+                    if (!isNaN(pts)) t2Score += pts;
                 }
             });
         });
+
+        // Scores cannot drop below 0
+        if (t1Score < 0) t1Score = 0;
+        if (t2Score < 0) t2Score = 0;
 
         document.getElementById('team1TotalScore').innerText = t1Score;
         document.getElementById('team2TotalScore').innerText = t2Score;
@@ -577,7 +580,7 @@
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Photo:</strong></p><img src="${e.target.result}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
+                document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Scoresheet Photo:</strong></p><img src="${e.target.result}" alt="Photo" style="max-width:100%; border-radius:8px;">`;
             };
             reader.readAsDataURL(file);
         }
