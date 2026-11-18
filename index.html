@@ -349,6 +349,35 @@
             color: var(--table-th-color);
             font-weight: 600;
         }
+
+        /* Roster Modal Styling */
+        .roster-tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        .roster-tag {
+            background: var(--border);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .roster-tag button {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -364,7 +393,7 @@
             <div class="nav-tabs">
                 <button class="tab-btn active" id="btn-scorekeeper" onclick="switchTab('scorekeeper')">Score Sheet</button>
                 <button class="tab-btn" id="btn-photoScan" onclick="switchTab('photoScan')">Photo Scan & API</button>
-                <button class="tab-btn" id="btn-leaderboards" onclick="switchTab('leaderboards')">Leaderboards</button>
+                <button class="tab-btn" id="btn-leaderboards" onclick="switchTab('leaderboards')">Leaderboards & Analytics</button>
             </div>
         </div>
     </header>
@@ -385,6 +414,7 @@
                 </div>
 
                 <div class="controls-group">
+                    <button class="success" onclick="openRosterModal()">Manage Roster</button>
                     <button class="success" onclick="addOvertimeRow()">+ Overtime Q</button>
                     <button class="primary" onclick="saveMatchData()">Save Match</button>
                     <button class="danger" onclick="clearAllData()">Reset All</button>
@@ -429,7 +459,7 @@
     <div id="tab-photoScan" class="tab-content">
         <div class="card">
             <h2>Vercel Serverless Scoresheet Processing</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. Extracted stats are verified against your school roster and can be saved to your choice of leaderboard.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper scoresheet. Extracted stats are verified against your active roster and can be saved to your choice of leaderboard.</p>
             
             <div class="photo-review-layout">
                 <div>
@@ -448,10 +478,12 @@
         </div>
     </div>
 
-    <!-- Leaderboards Tab -->
+    <!-- Leaderboards & Analytics Tab -->
     <div id="tab-leaderboards" class="tab-content">
         <div class="card">
-            <h2>Player Leaderboards</h2>
+            <h2>Player Leaderboards & Analytics</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Review cumulative player performance, tossup conversion counts, and point analytics.</p>
+            
             <div class="leaderboard-grid">
                 <div>
                     <h3>Real Matches</h3>
@@ -468,20 +500,69 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Player Analytics Breakdown -->
+            <div style="margin-top: 40px;">
+                <h3>Player Efficiency & Analytics</h3>
+                <table class="lb-table" id="analyticsTable">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Total Tossups Correct</th>
+                            <th>Total Points</th>
+                            <th>Average Pts / Match</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Roster Management Modal -->
+<div id="rosterModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:1000;">
+    <div class="card" style="width: 450px; max-width: 90%;">
+        <h3>Manage Team Roster</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Add or remove players from your active school roster.</p>
+        
+        <div class="roster-tag-list" id="rosterTagList"></div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="newPlayerNameInput" placeholder="Enter player name..." style="flex:1;">
+            <button class="success" onclick="addNewPlayer()">Add Player</button>
+        </div>
+
+        <button class="primary" style="width:100%;" onclick="closeRosterModal()">Done & Save</button>
+    </div>
+</div>
+
 <script>
-    // Clean roster without placeholder names
-    const schoolRoster = ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic"];
+    // Dynamic Roster loaded from localStorage or default
+    let schoolRoster = JSON.parse(localStorage.getItem('scholar_bowl_roster')) || ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic"];
     const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
 
     let totalQuestionsCount = 20;
     let lastScannedMatchData = null;
 
+    // Web Audio API Click Sound Generator
+    function playClickSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        } catch(e) {}
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-        // Load Dark Mode Preference
         if (localStorage.getItem('scholar_bowl_theme') === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
             document.getElementById('darkModeBtn').innerText = '☀️ Light Mode';
@@ -490,6 +571,7 @@
     });
 
     function toggleDarkMode() {
+        playClickSound();
         if (document.documentElement.getAttribute('data-theme') === 'dark') {
             document.documentElement.removeAttribute('data-theme');
             localStorage.setItem('scholar_bowl_theme', 'light');
@@ -502,6 +584,7 @@
     }
 
     function switchTab(tabName) {
+        playClickSound();
         ['scorekeeper', 'photoScan', 'leaderboards'].forEach(t => {
             let btn = document.getElementById('btn-' + t);
             let content = document.getElementById('tab-' + t);
@@ -514,6 +597,45 @@
         if (activeContent) activeContent.classList.add('active');
 
         if (tabName === 'leaderboards') renderLeaderboards();
+    }
+
+    // --- Roster Modal Functions ---
+    function openRosterModal() {
+        playClickSound();
+        renderRosterTags();
+        document.getElementById('rosterModal').style.display = 'flex';
+    }
+
+    function closeRosterModal() {
+        playClickSound();
+        document.getElementById('rosterModal').style.display = 'none';
+        localStorage.setItem('scholar_bowl_roster', JSON.stringify(schoolRoster));
+        buildScoreSheet();
+    }
+
+    function renderRosterTags() {
+        const list = document.getElementById('rosterTagList');
+        list.innerHTML = '';
+        schoolRoster.forEach((p, idx) => {
+            list.innerHTML += `<div class="roster-tag">${p} <button onclick="removePlayer(${idx})">&times;</button></div>`;
+        });
+    }
+
+    function addNewPlayer() {
+        playClickSound();
+        const input = document.getElementById('newPlayerNameInput');
+        const name = input.value.trim();
+        if (name && !schoolRoster.includes(name)) {
+            schoolRoster.push(name);
+            input.value = '';
+            renderRosterTags();
+        }
+    }
+
+    function removePlayer(index) {
+        playClickSound();
+        schoolRoster.splice(index, 1);
+        renderRosterTags();
     }
 
     function buildScoreSheet() {
@@ -606,6 +728,7 @@
     }
 
     function setScoreValue(btn, val, className) {
+        playClickSound();
         const group = btn.closest('.score-btn-group');
         const input = group.querySelector('.' + className);
         
@@ -625,6 +748,7 @@
     }
 
     function addOvertimeRow() {
+        playClickSound();
         totalQuestionsCount++;
         saveCurrentSheetState();
         buildScoreSheet();
@@ -731,6 +855,7 @@
     }
 
     function handleImageUpload(event) {
+        playClickSound();
         const file = event.target.files[0];
         if (!file) return;
 
@@ -830,6 +955,7 @@
     }
 
     function saveScannedMatchToLeaderboard() {
+        playClickSound();
         if (!lastScannedMatchData || lastScannedMatchData.records.length === 0) {
             alert("No verified player records to save.");
             return;
@@ -849,6 +975,7 @@
     }
 
     function clearAllData() {
+        playClickSound();
         if(confirm("Reset all data and history?")) {
             localStorage.clear();
             totalQuestionsCount = 20;
@@ -857,6 +984,7 @@
     }
 
     function saveMatchData() {
+        playClickSound();
         const matchName = document.getElementById('matchName').value || "Unnamed Match";
         const matchType = document.getElementById('matchType').value;
         const rows = document.querySelectorAll('#scoreSheetBody tr');
@@ -891,10 +1019,12 @@
     function renderLeaderboards() {
         const realTableBody = document.querySelector('#realLbTable tbody');
         const practiceTableBody = document.querySelector('#practiceLbTable tbody');
-        if(!realTableBody || !practiceTableBody) return;
+        const analyticsTableBody = document.querySelector('#analyticsTable tbody');
+        if(!realTableBody || !practiceTableBody || !analyticsTableBody) return;
 
         realTableBody.innerHTML = '';
         practiceTableBody.innerHTML = '';
+        analyticsTableBody.innerHTML = '';
 
         let savedMatches = [];
         try {
@@ -903,13 +1033,18 @@
 
         let realStats = {};
         let practiceStats = {};
+        let matchCounts = {};
+        
         schoolRoster.forEach(p => {
             realStats[p] = { q: 0, points: 0 };
             practiceStats[p] = { q: 0, points: 0 };
+            matchCounts[p] = 0;
         });
 
         savedMatches.forEach(m => {
+            let playersInMatch = new Set();
             m.records.forEach(r => {
+                playersInMatch.add(r.player);
                 if (m.type === 'real' && realStats[r.player]) {
                     realStats[r.player].q += r.qCorrect;
                     realStats[r.player].points += r.points;
@@ -917,6 +1052,9 @@
                     practiceStats[r.player].q += r.qCorrect;
                     practiceStats[r.player].points += r.points;
                 }
+            });
+            playersInMatch.forEach(p => {
+                if (matchCounts[p] !== undefined) matchCounts[p]++;
             });
         });
 
@@ -932,6 +1070,18 @@
             let tr = document.createElement('tr');
             tr.innerHTML = `<td>${index + 1}</td><td>${item.player}</td><td>${item.q}</td><td>${item.points}</td>`;
             practiceTableBody.appendChild(tr);
+        });
+
+        // Render Analytics Breakdown
+        schoolRoster.forEach(p => {
+            let totalQ = (realStats[p]?.q || 0) + (practiceStats[p]?.q || 0);
+            let totalPts = (realStats[p]?.points || 0) + (practiceStats[p]?.points || 0);
+            let matches = matchCounts[p] || 1;
+            let avgPts = (totalPts / matches).toFixed(1);
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${p}</td><td>${totalQ}</td><td>${totalPts}</td><td>${avgPts} pts</td>`;
+            analyticsTableBody.appendChild(tr);
         });
     }
 </script>
