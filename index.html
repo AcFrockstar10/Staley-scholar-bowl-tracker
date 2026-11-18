@@ -214,7 +214,7 @@
                 </select>
 
                 <label><strong>Match Name:</strong></label>
-                <input type="text" id="matchName" value="Match 1 - 11/18/26" placeholder="e.g., Match vs West High">
+                <input type="text" id="matchName" value="Match 1 - 11/18/26" placeholder="e.g., Match vs West High" oninput="saveCurrentSheetState()">
 
                 <button class="primary" onclick="saveMatchData()">Save Match to Leaderboard</button>
                 <button class="danger" onclick="clearAllData()">Clear All Points</button>
@@ -290,7 +290,7 @@
     const schoolRoster = ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic"];
     const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
 
-    let savedMatches = [];
+    let savedMatches = JSON.parse(localStorage.getItem('scholar_bowl_matches') || '[]');
 
     function switchTab(tabId) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -309,6 +309,7 @@
     function buildScoreSheet() {
         const tbody = document.getElementById('scoreSheetBody');
         const matchType = document.getElementById('matchType').value;
+        let savedState = JSON.parse(localStorage.getItem('scholar_bowl_current_sheet') || '[]');
         let htmlRows = '';
 
         let t2List = (matchType === 'practice') ? schoolRoster : opponentRealPlayers;
@@ -318,29 +319,73 @@
         let t1Options = '<option value="N/A">N/A</option>';
         schoolRoster.forEach(p => { t1Options += `<option value="${p}">${p}</option>`; });
 
-        for (let i = 1; i <= 20; i++) {
+        for (let i = 0; i < 20; i++) {
+            let rowData = savedState[i] || { t1p: 'N/A', t1q: '', t1b1: '', t1b2: '', t1b3: '', t2p: 'N/A', t2q: '', t2b1: '', t2b2: '', t2b3: '' };
+            
             htmlRows += `
                 <tr>
-                    <td><select class="t1-player" data-row="${i}">${t1Options}</select></td>
-                    <td><input type="text" class="t1-q" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                    <td><input type="text" class="t1-b1" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                    <td><input type="text" class="t1-b2" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                    <td><input type="text" class="t1-b3" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                    <td><select class="t2-player" data-row="${i}">${t2Options}</select></td>
-                    <td><input type="text" class="t2-q" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                    <td><input type="text" class="t2-b1" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                    <td><input type="text" class="t2-b2" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                    <td><input type="text" class="t2-b3" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                    <td><select class="t1-player" data-row="${i}" onchange="saveCurrentSheetState()">${t1Options}</select></td>
+                    <td><input type="text" class="t1-q" value="${rowData.t1q}" style="width:100%; text-align:center;" placeholder="10/X" oninput="saveCurrentSheetState()"></td>
+                    <td><input type="text" class="t1-b1" value="${rowData.t1b1}" style="width:100%; text-align:center;" placeholder="10/X" oninput="saveCurrentSheetState()"></td>
+                    <td><input type="text" class="t1-b2" value="${rowData.t1b2}" style="width:100%; text-align:center;" placeholder="10/X" oninput="saveCurrentSheetState()"></td>
+                    <td><input type="text" class="t1-b3" value="${rowData.t1b3}" style="width:100%; text-align:center;" placeholder="10/X" oninput="saveCurrentSheetState()"></td>
+                    <td><select class="t2-player" data-row="${i}" onchange="saveCurrentSheetState()">${t2Options}</select></td>
+                    <td><input type="text" class="t2-q" value="${rowData.t2q}" style="width:100%; text-align:center;" placeholder="10/X" oninput="saveCurrentSheetState()"></td>
+                    <td><input type="text" class="t2-b1" value="${rowData.t2b1}" style="width:100%; text-align:center;" placeholder="10/X" oninput="saveCurrentSheetState()"></td>
+                    <td><input type="text" class="t2-b2" value="${rowData.t2b2}" style="width:100%; text-align:center;" placeholder="10/X" oninput="saveCurrentSheetState()"></td>
+                    <td><input type="text" class="t2-b3" value="${rowData.t2b3}" style="width:100%; text-align:center;" placeholder="10/X" oninput="saveCurrentSheetState()"></td>
                 </tr>
             `;
         }
         tbody.innerHTML = htmlRows;
+
+        // Restore selected dropdown values
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach((tr, i) => {
+            if (savedState[i]) {
+                tr.querySelector('.t1-player').value = savedState[i].t1p;
+                tr.querySelector('.t2-player').value = savedState[i].t2p;
+            }
+        });
+
+        let savedName = localStorage.getItem('scholar_bowl_match_name');
+        if(savedName) document.getElementById('matchName').value = savedName;
+
+        let savedType = localStorage.getItem('scholar_bowl_match_type');
+        if(savedType) document.getElementById('matchType').value = savedType;
     }
 
-    function updateScorecard() { buildScoreSheet(); }
+    function saveCurrentSheetState() {
+        const rows = document.querySelectorAll('#scoreSheetBody tr');
+        let state = [];
+        rows.forEach(tr => {
+            state.push({
+                t1p: tr.querySelector('.t1-player').value,
+                t1q: tr.querySelector('.t1-q').value,
+                t1b1: tr.querySelector('.t1-b1').value,
+                t1b2: tr.querySelector('.t1-b2').value,
+                t1b3: tr.querySelector('.t1-b3').value,
+                t2p: tr.querySelector('.t2-player').value,
+                t2q: tr.querySelector('.t2-q').value,
+                t2b1: tr.querySelector('.t2-b1').value,
+                t2b2: tr.querySelector('.t2-b2').value,
+                t2b3: tr.querySelector('.t2-b3').value
+            });
+        });
+        localStorage.setItem('scholar_bowl_current_sheet', JSON.stringify(state));
+        localStorage.setItem('scholar_bowl_match_name', document.getElementById('matchName').value);
+        localStorage.setItem('scholar_bowl_match_type', document.getElementById('matchType').value);
+    }
+
+    function updateScorecard() { 
+        saveCurrentSheetState();
+        buildScoreSheet(); 
+    }
 
     function clearAllData() {
         if(confirm("Are you sure you want to clear all inputs on this sheet?")) {
+            localStorage.removeItem('scholar_bowl_current_sheet');
+            localStorage.removeItem('scholar_bowl_match_name');
             buildScoreSheet();
         }
     }
@@ -366,7 +411,9 @@
         });
 
         savedMatches.push({ name: matchName, type: matchType, records: matchRecords });
-        alert(`Match "${matchName}" successfully saved!`);
+        localStorage.setItem('scholar_bowl_matches', JSON.stringify(savedMatches));
+        alert(`Match "${matchName}" successfully saved to leaderboard!`);
+        localStorage.removeItem('scholar_bowl_current_sheet');
         buildScoreSheet();
     }
 
