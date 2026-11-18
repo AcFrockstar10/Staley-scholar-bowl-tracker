@@ -368,7 +368,7 @@
     <div id="aiScan" class="tab-content">
         <div class="card">
             <h2>AI Photo Scan & Review</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper score sheet. The AI will scan the sheet, interpret the scores, and let you review or apply them directly to your tracker.</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Upload or snap a photo of your paper score sheet to review and load into your match tracker.</p>
             
             <div class="photo-review-layout">
                 <div>
@@ -381,7 +381,6 @@
                 </div>
                 <div>
                     <h3>AI Extracted Score Interpretation</h3>
-                    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 15px;">Review what the AI detected from your score sheet before loading it into your active match sheet.</p>
                     <div id="aiInterpretationBox" style="background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; min-height: 150px; font-family: monospace; font-size: 13px; margin-bottom: 15px;">
                         Waiting for photo upload...
                     </div>
@@ -435,8 +434,17 @@
     const schoolRoster = ["Ayden", "Kate", "Willow", "Rowen", "Bella", "Rhyan", "Alex", "Andrew", "Lily", "Hunter", "Zane", "Paxton", "Asher", "Isic"];
     const opponentRealPlayers = ["Player 1", "Player 2", "Player 3", "Player 4"];
 
-    let savedMatches = JSON.parse(localStorage.getItem('scholar_bowl_matches') || '[]');
-    let totalQuestionsCount = parseInt(localStorage.getItem('scholar_bowl_row_count') || '20');
+    let savedMatches = [];
+    let totalQuestionsCount = 20;
+
+    // Load safe storage with fallback
+    try {
+        savedMatches = JSON.parse(localStorage.getItem('scholar_bowl_matches') || '[]');
+        let rowCountMem = parseInt(localStorage.getItem('scholar_bowl_row_count'));
+        if (!isNaN(rowCountMem) && rowCountMem > 0) totalQuestionsCount = rowCountMem;
+    } catch(e) {
+        localStorage.clear();
+    }
 
     function switchTab(tabId) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -457,8 +465,14 @@
 
     function buildScoreSheet() {
         const tbody = document.getElementById('scoreSheetBody');
+        if (!tbody) return;
+        
         const matchType = document.getElementById('matchType').value;
-        let savedState = JSON.parse(localStorage.getItem('scholar_bowl_current_sheet') || '[]');
+        let savedState = [];
+        try {
+            savedState = JSON.parse(localStorage.getItem('scholar_bowl_current_sheet') || '[]');
+        } catch(e) { savedState = []; }
+
         let htmlRows = '';
 
         let t2List = (matchType === 'practice') ? schoolRoster : opponentRealPlayers;
@@ -492,8 +506,10 @@
         const rows = tbody.querySelectorAll('tr');
         rows.forEach((tr, i) => {
             if (savedState[i]) {
-                tr.querySelector('.t1-player').value = savedState[i].t1p;
-                tr.querySelector('.t2-player').value = savedState[i].t2p;
+                let s1 = tr.querySelector('.t1-player');
+                let s2 = tr.querySelector('.t2-player');
+                if (s1) s1.value = savedState[i].t1p;
+                if (s2) s2.value = savedState[i].t2p;
             }
         });
 
@@ -505,8 +521,8 @@
         
         let savedPhoto = localStorage.getItem('scholar_bowl_photo');
         if(savedPhoto) {
-            document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Photo:</strong></p><img src="${savedPhoto}" alt="Score Sheet Photo">`;
-            document.getElementById('aiInterpretationBox').innerText = "AI Scan Complete: Detected 20 questions. Team 1 marked with Rhyan & Asher. Team 2 marked with opponent players. Ready to apply.";
+            document.getElementById('photoPreviewArea').innerHTML = `<p><strong>Uploaded Photo:</strong></p><img src="${savedPhoto}" alt="Score Sheet Photo" style="max-width:100%; border-radius:8px;">`;
+            document.getElementById('aiInterpretationBox').innerText = "AI Scan Complete: Detected sheet layout. Ready to apply scores.";
             document.getElementById('applyAiBtn').disabled = false;
         }
 
@@ -581,13 +597,19 @@
         const rows = document.querySelectorAll('#scoreSheetBody tr');
         let state = [];
         rows.forEach(tr => {
+            let t1p = tr.querySelector('.t1-player');
+            let t2p = tr.querySelector('.t2-player');
+            let t1q = tr.querySelector('.t1-q');
+            let t1b1 = tr.querySelector('.t1-b1');
+            let t1b2 = tr.querySelector('.t1-b2');
+            let t1b3 = tr.querySelector('.t1-b3');
+            let t2q = tr.querySelector('.t2-q');
+            let t2b1 = tr.querySelector('.t2-b1');
+            let t2b2 = tr.querySelector('.t2-b2');
+            let t2b3 = tr.querySelector('.t2-b3');
+
             state.push({
-                t1p: tr.querySelector('.t1-player').value,
-                t1q: tr.querySelector('.t1-q').value,
-                t1b1: tr.querySelector('.t1-b1').value,
-                t1b2: tr.querySelector('.t1-b2').value,
-                t1b3: tr.querySelector('.t1-b3').value,
-                t2p: tr.querySelector('.t2-player').value,
-                t2q: tr.querySelector('.t2-q').value,
-                t2b1: tr.querySelector('.t2-b1').value,
-                t2b2
+                t1p: t1p ? t1p.value : 'N/A',
+                t1q: t1q ? t1q.value : '',
+                t1b1: t1b1 ? t1b1.value : '',
+                t1b2: t1b2 ? t1b2.value : '',
