@@ -114,6 +114,18 @@
             background: var(--primary-dark);
         }
 
+        button.danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button.danger:hover {
+            background: #dc2626;
+        }
+
         .score-table-wrapper {
             overflow-x: auto;
             border-radius: 8px;
@@ -205,7 +217,7 @@
                 <input type="text" id="matchName" value="Match 1 - 11/18/26" placeholder="e.g., Match vs West High">
 
                 <button class="primary" onclick="saveMatchData()">Save Match to Leaderboard</button>
-                <button onclick="resetScoreSheet()">Clear Sheet</button>
+                <button class="danger" onclick="clearAllData()">Clear All Points</button>
             </div>
 
             <div class="score-table-wrapper">
@@ -296,39 +308,42 @@
 
     function buildScoreSheet() {
         const tbody = document.getElementById('scoreSheetBody');
-        tbody.innerHTML = '';
         const matchType = document.getElementById('matchType').value;
+        let htmlRows = '';
+
+        let t2List = (matchType === 'practice') ? schoolRoster : opponentRealPlayers;
+        let t2Options = '<option value="N/A">N/A</option>';
+        t2List.forEach(p => { t2Options += `<option value="${p}">${p}</option>`; });
+
+        let t1Options = '<option value="N/A">N/A</option>';
+        schoolRoster.forEach(p => { t1Options += `<option value="${p}">${p}</option>`; });
 
         for (let i = 1; i <= 20; i++) {
-            const tr = document.createElement('tr');
-
-            let t1Select = `<select class="t1-player" data-row="${i}"><option value="N/A">N/A</option>`;
-            schoolRoster.forEach(p => { t1Select += `<option value="${p}">${p}</option>`; });
-            t1Select += `</select>`;
-
-            let t2Select = `<select class="t2-player" data-row="${i}"><option value="N/A">N/A</option>`;
-            let t2List = (matchType === 'practice') ? schoolRoster : opponentRealPlayers;
-            t2List.forEach(p => { t2Select += `<option value="${p}">${p}</option>`; });
-            t2Select += `</select>`;
-
-            tr.innerHTML = `
-                <td>${t1Select}</td>
-                <td><input type="text" class="t1-q" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                <td><input type="text" class="t1-b1" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                <td><input type="text" class="t1-b2" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                <td><input type="text" class="t1-b3" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                <td>${t2Select}</td>
-                <td><input type="text" class="t2-q" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                <td><input type="text" class="t2-b1" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                <td><input type="text" class="t2-b2" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
-                <td><input type="text" class="t2-b3" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+            htmlRows += `
+                <tr>
+                    <td><select class="t1-player" data-row="${i}">${t1Options}</select></td>
+                    <td><input type="text" class="t1-q" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                    <td><input type="text" class="t1-b1" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                    <td><input type="text" class="t1-b2" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                    <td><input type="text" class="t1-b3" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                    <td><select class="t2-player" data-row="${i}">${t2Options}</select></td>
+                    <td><input type="text" class="t2-q" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                    <td><input type="text" class="t2-b1" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                    <td><input type="text" class="t2-b2" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                    <td><input type="text" class="t2-b3" value="" style="width:100%; text-align:center;" placeholder="10/X"></td>
+                </tr>
             `;
-            tbody.appendChild(tr);
         }
+        tbody.innerHTML = htmlRows;
     }
 
     function updateScorecard() { buildScoreSheet(); }
-    function resetScoreSheet() { buildScoreSheet(); }
+
+    function clearAllData() {
+        if(confirm("Are you sure you want to clear all inputs on this sheet?")) {
+            buildScoreSheet();
+        }
+    }
 
     function saveMatchData() {
         const matchName = document.getElementById('matchName').value || "Unnamed Match";
@@ -352,6 +367,7 @@
 
         savedMatches.push({ name: matchName, type: matchType, records: matchRecords });
         alert(`Match "${matchName}" successfully saved!`);
+        buildScoreSheet();
     }
 
     function renderLeaderboards() {
