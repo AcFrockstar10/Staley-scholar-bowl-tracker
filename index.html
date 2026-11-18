@@ -277,6 +277,31 @@
             border: 1px solid var(--border);
             margin-top: 10px;
         }
+
+        /* Styled table format for server response feedback */
+        .response-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .response-table th, .response-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .response-table th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+            width: 35%;
+        }
     </style>
 </head>
 <body>
@@ -599,7 +624,7 @@
         buildScoreSheet(); 
     }
 
-    // Client-side image compression + Vercel Serverless API call with rich feedback
+    // Client-side image compression + Vercel Serverless API call with styled table format
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -635,12 +660,21 @@
                     const data = await response.json();
                     if (data.success) {
                         document.getElementById('scanStatusBox').innerHTML = `
-                            <p style="color: #166534; font-weight: bold; margin-bottom: 8px;">✓ ${data.message}</p>
-                            <ul style="list-style-type: none; padding-left: 0; font-size: 13px; color: #333;">
-                                <li><strong>File Size:</strong> ${data.details.fileSize}</li>
-                                <li><strong>Processed At:</strong> ${data.details.processedAt}</li>
-                                <li><strong>Status:</strong> ${data.details.serverStatus}</li>
-                            </ul>
+                            <p style="color: #166534; font-weight: bold; margin-bottom: 10px;">✓ ${data.message}</p>
+                            <table class="response-table">
+                                <tr>
+                                    <th>File Size</th>
+                                    <td>${data.details.fileSize}</td>
+                                </tr>
+                                <tr>
+                                    <th>Processed At</th>
+                                    <td>${data.details.processedAt}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status</th>
+                                    <td>${data.details.serverStatus}</td>
+                                </tr>
+                            </table>
                         `;
                     } else {
                         document.getElementById('scanStatusBox').innerText = "Error: " + (data.error || "Unknown error");
